@@ -17,58 +17,51 @@ namespace AvaloniaInkCanvasDemo.Views;
 
 public partial class MainView : UserControl
 {
+
+    private string PdfFilePath;
+
     public MainView()
     {
         InitializeComponent();
-        var settings = InkCanvas.AvaloniaSkiaInkCanvas.Settings;
-        settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
     }
 
     private void PenModeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        InkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        SetInkCanvasEditingMode(InkCanvasEditingMode.Ink);
     }
 
     private void EraserModeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        InkCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
-    }
-
-    private void SwitchRendererButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        var settings = InkCanvas.AvaloniaSkiaInkCanvas.Settings;
-
-        if (settings.InkStrokeRenderer is null)
-        {
-            settings.InkStrokeRenderer = new WpfForSkiaInkStrokeRenderer();
-        }
-        else
-        {
-            settings.InkStrokeRenderer = null;
-        }
+        SetInkCanvasEditingMode(InkCanvasEditingMode.EraseByPoint);
     }
 
     private void SaveStrokeAsSvgButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var saveFolder = Path.Join(AppContext.BaseDirectory, $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss}");
-        Directory.CreateDirectory(saveFolder);
+        var baseDirectory = Path.GetDirectoryName(PdfFilePath);
+        var baseFileName = Path.GetFileNameWithoutExtension(PdfFilePath);
+
+        foreach (var oldFile in Directory.GetFiles(baseDirectory, $"{baseFileName}.*.svg"))
+            File.Delete(oldFile);
 
         using var skPaint = new SKPaint();
         skPaint.IsAntialias = true;
         skPaint.Style = SKPaintStyle.Fill;
 
-        for (var i = 0; i < InkCanvas.Strokes.Count; i++)
+        for (var page = 0; page < MusicCanvas.Children.Count; page++)
         {
-            var saveSvgFile = Path.Join(saveFolder, $"{i}.svg");
+            var inkCanvas = MusicCanvas.Children[page] as InkCanvas;
+
+            var saveSvgFile = Path.Combine(baseDirectory, $"{baseFileName}.{page}.svg");
             using var fileStream = File.Create(saveSvgFile);
-
-            var stroke = InkCanvas.Strokes[i];
-
-            var bounds = InkCanvas.Bounds.ToSKRect();
+            var bounds = inkCanvas.Bounds.ToSKRect();
             using var skCanvas = SKSvgCanvas.Create(bounds, fileStream);
 
-            skPaint.Color = stroke.Color;
-            skCanvas.DrawPath(stroke.Path, skPaint);
+            for (var i = 0; i < inkCanvas.Strokes.Count; i++)
+            {
+                var stroke = inkCanvas.Strokes[i];
+                skPaint.Color = stroke.Color;
+                skCanvas.DrawPath(stroke.Path, skPaint);
+            }
         }
     }
 
@@ -78,9 +71,22 @@ public partial class MainView : UserControl
         {
             if (e.AddedItems[0] is ISolidColorBrush brush)
             {
-                InkCanvas.AvaloniaSkiaInkCanvas.Settings.InkColor = brush.Color.ToSKColor();
+                SetInkCanvasInkColour(brush.Color.ToSKColor());
             }
         }
+    }
+
+    private void SetInkCanvasEditingMode(InkCanvasEditingMode mode)
+    {
+        foreach (InkCanvas inkCanvas in MusicCanvas.Children)
+            inkCanvas.EditingMode = mode;
+    }
+
+
+    private void SetInkCanvasInkColour(SKColor colour)
+    {
+        foreach (InkCanvas inkCanvas in MusicCanvas.Children)
+            inkCanvas.AvaloniaSkiaInkCanvas.Settings.InkColor = colour;
     }
 
     private async void OpenPdfButton_OnClick(object sender, RoutedEventArgs e)
@@ -94,8 +100,8 @@ public partial class MainView : UserControl
 
         if (result.Count > 0)
         {
-            var pdfFilePath = result[0].Path.LocalPath;
-            RenderPdfToView(pdfFilePath);
+            PdfFilePath = result[0].Path.LocalPath;
+            RenderPdfToView(PdfFilePath);
         }
     }
 
@@ -109,17 +115,24 @@ public partial class MainView : UserControl
             //Open a PDF document
             using MuPDFDocument document = new MuPDFDocument(ctx, pdfFilePath);
 
+            MusicCanvas.Children.Clear();
+
             // Convert the bitmap to an Avalonia Bitmap and set it to the MusicImage control
-            using var memoryStream = new MemoryStream();
-            document.WriteImage(0, 2, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
-            memoryStream.Seek(0, SeekOrigin.Begin);
-            
-            var avaloniaBitmap = new Bitmap(memoryStream);
-            MusicImage.Source = avaloniaBitmap;
+            for (int page = 0; page < document.Pages.Length; page++)
+            {
+                using var memoryStream = new MemoryStream();
+                document.WriteImage(page, 2, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                var inkCanvas = new InkCanvas();
+                inkCanvas.Image = new Bitmap(memoryStream);
+                inkCanvas.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
+                MusicCanvas.Children.Add(inkCanvas);
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error rendering PDF: {ex.Message}");
         }
-    }    
+    }
 }

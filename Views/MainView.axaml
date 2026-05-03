@@ -12,16 +12,11 @@
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainViewModel />
     </Design.DataContext>
-    <Grid RowDefinitions="*,Auto,Auto"
-        Background="Gray">
-        <Border Background="White">
-            <Grid>
-                <OverlayLayer x:Name="Overlay">
-                    <Image x:Name="MusicImage" Stretch="Uniform" Opacity="0.5"/>
-                    <inking:InkCanvas x:Name="InkCanvas"/>                    
-                </OverlayLayer>                
-            </Grid>
-        </Border>
+    <Grid RowDefinitions="*,Auto,Auto" Background="Gray">
+        <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Visible">
+            <StackPanel x:Name="MusicCanvas"> 
+            </StackPanel>
+        </ScrollViewer>                     
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10,10,10,0">
             <ListBox SelectedIndex="0" Background="Transparent" ItemsSource="{Binding SolidColorBrushCollection}" SelectionChanged="SelectingItemsControl_OnSelectionChanged">
                 <ListBox.ItemsPanel>
@@ -40,7 +35,6 @@
             <Button x:Name="OpenButton" Click="OpenPdfButton_OnClick">Open</Button>
             <Button x:Name="PenModeButton" Click="PenModeButton_OnClick">Pen</Button>
             <Button x:Name="EraserModeButton" Margin="10,0,0,0" Click="EraserModeButton_OnClick">Eraser</Button>
-            <Button x:Name="SwitchRendererButton" Margin="10,0,0,0" Click="SwitchRendererButton_OnClick">Switch Renderer</Button>
             <Button x:Name="SaveStrokeAsSvgButton" Margin="10,0,0,0" Click="SaveStrokeAsSvgButton_OnClick">Save Stroke As Svg</Button>
         </StackPanel>
     </Grid>
