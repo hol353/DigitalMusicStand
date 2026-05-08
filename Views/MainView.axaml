@@ -12,30 +12,28 @@
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainViewModel />
     </Design.DataContext>
-    <Grid RowDefinitions="*,Auto,Auto" Background="Gray">
-        <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Visible">
-            <StackPanel x:Name="MusicCanvas"> 
-            </StackPanel>
-        </ScrollViewer>                     
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10,10,10,0">
-            <ListBox SelectedIndex="0" Background="Transparent" ItemsSource="{Binding SolidColorBrushCollection}" SelectionChanged="SelectingItemsControl_OnSelectionChanged">
-                <ListBox.ItemsPanel>
+    <Grid RowDefinitions="Auto,*" Background="Gray">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,10">
+            <Button x:Name="OpenButton" Margin="10,0,0,0" Click="OpenPdfButton_OnClick">Open</Button>
+            <Button x:Name="PenModeButton" Margin="10,0,0,0" Click="PenModeButton_OnClick">Pen</Button>
+            <Button x:Name="EraserModeButton" Margin="10,0,0,0" Click="EraserModeButton_OnClick">Eraser</Button>
+            <ComboBox SelectedIndex="0" Margin="10,0,0,0" Background="Transparent" ItemsSource="{Binding SolidColorBrushCollection}" SelectionChanged="SelectingItemsControl_OnSelectionChanged">
+                <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal"></StackPanel>
                     </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-                <ListBox.ItemTemplate>
+                </ComboBox.ItemsPanel>
+                <ComboBox.ItemTemplate>
                     <DataTemplate DataType="IBrush">
                         <Ellipse Fill="{Binding .}" Width="20" Height="20"></Ellipse>
                     </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
         </StackPanel>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10,10,10,10">
-            <Button x:Name="OpenButton" Click="OpenPdfButton_OnClick">Open</Button>
-            <Button x:Name="PenModeButton" Click="PenModeButton_OnClick">Pen</Button>
-            <Button x:Name="EraserModeButton" Margin="10,0,0,0" Click="EraserModeButton_OnClick">Eraser</Button>
-            <Button x:Name="SaveStrokeAsSvgButton" Margin="10,0,0,0" Click="SaveStrokeAsSvgButton_OnClick">Save Stroke As Svg</Button>
-        </StackPanel>
+        <ScrollViewer Grid.Row="1" x:Name="Scroller" VerticalScrollBarVisibility="Visible">
+            <StackPanel x:Name="MusicCanvas"> 
+            </StackPanel>
+        </ScrollViewer>                     
+
     </Grid>
 </UserControl>

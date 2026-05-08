@@ -6,22 +6,30 @@ using System.Linq;
 using System.Reflection;
 using System.Xml;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Skia;
 using Avalonia.Skia.Helpers;
+using AvaloniaInkCanvasDemo.Views.ErasingView;
 using DotNetCampus.Inking;
+using DotNetCampus.Inking.Erasing;
 using DotNetCampus.Inking.Primitive;
 using DynamicData;
+using MuPDFCore;
 using SkiaSharp;
 
 namespace AvaloniaInkCanvasDemo.ViewModels;
 
 public class MainViewModel : ViewModelBase
 {
+    private List<InkCanvas> pages = new();
+    private string pdfFilePath;
+
     public MainViewModel()
     {
         SolidColorBrushCollection =
         [
             Brushes.Red,
+            Brushes.Yellow,
             Brushes.Black,
             Brushes.Green,
             Brushes.Blue,
@@ -37,16 +45,94 @@ public class MainViewModel : ViewModelBase
 
     public SettingsModel Settings { get; }
 
-    public void LoadAnnotations(string PdfFilePath, int pageNumber, InkCanvas canvas)
+    public IReadOnlyList<InkCanvas> canvases => pages;
+
+    public void LoadPdf(string pdfFilePath)
     {
-        var pdfDirectory = Path.GetDirectoryName(PdfFilePath);
+        pages.Clear();
+        this.pdfFilePath = pdfFilePath;
+
+        try
+        {
+            //Initialise the MuPDF context. This is needed to open or create documents.
+            using MuPDFContext ctx = new MuPDFContext();
+
+            //Open a PDF document
+            using MuPDFDocument document = new MuPDFDocument(ctx, pdfFilePath);
+
+            // Convert the bitmap to an Avalonia Bitmap and set it to the MusicImage control
+            for (int page = 0; page < document.Pages.Length; page++)
+            {
+                using var memoryStream = new MemoryStream();
+                document.WriteImage(page, 2, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                var inkCanvas = new InkCanvas();
+                inkCanvas.Image = new Bitmap(memoryStream);
+                inkCanvas.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
+                inkCanvas.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
+
+                LoadAnnotations(page + 1, inkCanvas);
+                pages.Add(inkCanvas);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error rendering PDF: {ex.Message}");
+        }
+    }
+
+    public void SaveAnnotations()
+    {
+        if (pdfFilePath != null)
+        {
+            var pdfDirectory = Path.GetDirectoryName(pdfFilePath);
+            var pdfRelativeDirectory = pdfDirectory.Replace(Settings.MusicLibraryBaseDirectory, "").TrimStart("/").ToString();
+            var pdfFileName = Path.GetFileNameWithoutExtension(pdfFilePath);
+            var annotationsBaseDirectory = Path.Combine(BaseDirectory, "Annotations");
+            var annotationPdfDirectory = Path.Combine(annotationsBaseDirectory, pdfRelativeDirectory);
+            Directory.CreateDirectory(annotationPdfDirectory);
+
+            foreach (var oldFile in Directory.GetFiles(annotationPdfDirectory, $"{pdfFileName}.*.svg"))
+                File.Delete(oldFile);
+
+            using var skPaint = new SKPaint();
+            skPaint.IsAntialias = true;
+            skPaint.Style = SKPaintStyle.Fill;
+
+            int pageNumber = 1;
+            foreach (var page in pages)
+            {
+                if (page.Strokes.Any())
+                {
+                    var saveSvgFile = Path.Combine(annotationPdfDirectory, $"{pdfFileName}.{pageNumber}.svg");
+                    using var fileStream = File.Create(saveSvgFile);
+                    var bounds = page.Bounds.ToSKRect();
+                    using var skCanvas = SKSvgCanvas.Create(bounds, fileStream);
+
+                    for (var i = 0; i < page.Strokes.Count; i++)
+                    {
+                        var stroke = page.Strokes[i];
+                        skPaint.Color = stroke.Color;
+                        skCanvas.DrawPath(stroke.Path, skPaint);
+                    }
+                }
+
+                pageNumber++;
+            }
+        }
+    }    
+
+    private void LoadAnnotations(int pageNumber, InkCanvas canvas)
+    {
+        var pdfDirectory = Path.GetDirectoryName(pdfFilePath);
         var pdfRelativeDirectory = pdfDirectory.Replace(Settings.MusicLibraryBaseDirectory, "").TrimStart("/").ToString();
-        var pdfFileName = Path.GetFileNameWithoutExtension(PdfFilePath);
+        var pdfFileName = Path.GetFileNameWithoutExtension(pdfFilePath);
         var svgFileName = Path.Combine(BaseDirectory, "Annotations", pdfRelativeDirectory, $"{pdfFileName}.{pageNumber}.svg");
         if (File.Exists(svgFileName))
         {
             XmlDocument svg = new XmlDocument();
-            svg.Load(svgFileName); 
+            svg.Load(svgFileName);
             var paths = svg.GetElementsByTagName("path");
             foreach (XmlNode pathNode in paths)
             {
@@ -68,49 +154,12 @@ public class MainViewModel : ViewModelBase
 
                     StylusPointListSpan stylusPointListSpan = new(points, 0, points.Count);
 
-                    var stroke = SkiaStroke.CreateStaticStroke(InkId.NewId(), skPath, stylusPointListSpan, color, 0.1f, true, inkStrokeRenderer:null);
-                    
+                    var stroke = SkiaStroke.CreateStaticStroke(InkId.NewId(), skPath, stylusPointListSpan, color, 0.1f, true, inkStrokeRenderer: null);
+
                     canvas.AvaloniaSkiaInkCanvas.AddStaticStroke(stroke);
                 }
             }
         }
     }
 
-    public void SaveAnnotations(string PdfFilePath, IEnumerable<InkCanvas> pages)
-    {
-        var pdfDirectory = Path.GetDirectoryName(PdfFilePath);
-        var pdfRelativeDirectory = pdfDirectory.Replace(Settings.MusicLibraryBaseDirectory, "").TrimStart("/").ToString();
-        var pdfFileName = Path.GetFileNameWithoutExtension(PdfFilePath);
-        var annotationsBaseDirectory = Path.Combine(BaseDirectory, "Annotations");
-        var annotationPdfDirectory = Path.Combine(annotationsBaseDirectory, pdfRelativeDirectory);
-        Directory.CreateDirectory(annotationPdfDirectory);
-
-        foreach (var oldFile in Directory.GetFiles(annotationPdfDirectory, $"{pdfFileName}.*.svg"))
-            File.Delete(oldFile);
-
-        using var skPaint = new SKPaint();
-        skPaint.IsAntialias = true;
-        skPaint.Style = SKPaintStyle.Fill;
-
-        int pageNumber = 1;
-        foreach (var page in pages)
-        {
-            if (page.Strokes.Any())
-            {
-                var saveSvgFile = Path.Combine(annotationPdfDirectory, $"{pdfFileName}.{pageNumber}.svg");
-                using var fileStream = File.Create(saveSvgFile);
-                var bounds = page.Bounds.ToSKRect();
-                using var skCanvas = SKSvgCanvas.Create(bounds, fileStream);
-
-                for (var i = 0; i < page.Strokes.Count; i++)
-                {
-                    var stroke = page.Strokes[i];
-                    skPaint.Color = stroke.Color;
-                    skCanvas.DrawPath(stroke.Path, skPaint);
-                }
-            }
-
-            pageNumber++;
-        }
-    }    
 }
