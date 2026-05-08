@@ -1,11 +1,13 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Skia;
+using AvaloniaInkCanvasDemo.ViewModels;
 using AvaloniaInkCanvasDemo.Views.ErasingView;
 using DotNetCampus.Inking;
 using DotNetCampus.Inking.Erasing;
@@ -37,32 +39,9 @@ public partial class MainView : UserControl
 
     private void SaveStrokeAsSvgButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var baseDirectory = Path.GetDirectoryName(PdfFilePath);
-        var baseFileName = Path.GetFileNameWithoutExtension(PdfFilePath);
+        var model = DataContext as MainViewModel;
 
-        foreach (var oldFile in Directory.GetFiles(baseDirectory, $"{baseFileName}.*.svg"))
-            File.Delete(oldFile);
-
-        using var skPaint = new SKPaint();
-        skPaint.IsAntialias = true;
-        skPaint.Style = SKPaintStyle.Fill;
-
-        for (var page = 0; page < MusicCanvas.Children.Count; page++)
-        {
-            var inkCanvas = MusicCanvas.Children[page] as InkCanvas;
-
-            var saveSvgFile = Path.Combine(baseDirectory, $"{baseFileName}.{page}.svg");
-            using var fileStream = File.Create(saveSvgFile);
-            var bounds = inkCanvas.Bounds.ToSKRect();
-            using var skCanvas = SKSvgCanvas.Create(bounds, fileStream);
-
-            for (var i = 0; i < inkCanvas.Strokes.Count; i++)
-            {
-                var stroke = inkCanvas.Strokes[i];
-                skPaint.Color = stroke.Color;
-                skCanvas.DrawPath(stroke.Path, skPaint);
-            }
-        }
+        model.SaveAnnotations(PdfFilePath, MusicCanvas.Children.Cast<InkCanvas>());
     }
 
     private void SelectingItemsControl_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -91,10 +70,13 @@ public partial class MainView : UserControl
 
     private async void OpenPdfButton_OnClick(object sender, RoutedEventArgs e)
     {
+        var model = DataContext as MainViewModel;
+
         var storageProvider = ((Window)this.VisualRoot).StorageProvider;
         var result = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Open PDF File",
+            SuggestedFileName = model.Settings.MusicLibraryBaseDirectory,
             FileTypeFilter = new[] { new FilePickerFileType("PDF Files") { Patterns = new[] { "*.pdf" } } }
         });
 
@@ -109,6 +91,8 @@ public partial class MainView : UserControl
     {
         try
         {
+            var model = DataContext as MainViewModel;
+
             //Initialise the MuPDF context. This is needed to open or create documents.
             using MuPDFContext ctx = new MuPDFContext();
 
@@ -128,6 +112,8 @@ public partial class MainView : UserControl
                 inkCanvas.Image = new Bitmap(memoryStream);
                 inkCanvas.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
                 MusicCanvas.Children.Add(inkCanvas);
+
+                model.LoadAnnotations(pdfFilePath, page + 1, inkCanvas);
             }
         }
         catch (Exception ex)
