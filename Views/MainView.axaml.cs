@@ -71,6 +71,7 @@ public partial class MainView : UserControl
         {
             var pdfFilePath = result[0].Path.LocalPath;
             model.LoadPdf(pdfFilePath);
+            MusicCanvas.Children.Clear();
             MusicCanvas.Children.AddRange(model.canvases);
         }
     }

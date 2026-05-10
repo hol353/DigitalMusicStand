@@ -21,7 +21,7 @@ namespace AvaloniaInkCanvasDemo.ViewModels;
 
 public class MainViewModel : ViewModelBase
 {
-    private List<InkCanvas> pages = new();
+    private List<SheetMusicControl> pages = new();
     private string pdfFilePath;
 
     public MainViewModel()
@@ -45,7 +45,7 @@ public class MainViewModel : ViewModelBase
 
     public SettingsModel Settings { get; }
 
-    public IReadOnlyList<InkCanvas> canvases => pages;
+    public IReadOnlyList<SheetMusicControl> canvases => pages;
 
     public void LoadPdf(string pdfFilePath)
     {
@@ -67,13 +67,13 @@ public class MainViewModel : ViewModelBase
                 document.WriteImage(page, 2, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
                 memoryStream.Seek(0, SeekOrigin.Begin);
 
-                var inkCanvas = new InkCanvas();
-                inkCanvas.Image = new Bitmap(memoryStream);
-                inkCanvas.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
-                inkCanvas.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
+                var sheetMusicControl = new SheetMusicControl();
+                sheetMusicControl.Image = new Bitmap(memoryStream);
+                sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
+                sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
 
-                LoadAnnotations(page + 1, inkCanvas);
-                pages.Add(inkCanvas);
+                LoadAnnotations(page + 1, sheetMusicControl);
+                pages.Add(sheetMusicControl);
             }
         }
         catch (Exception ex)
