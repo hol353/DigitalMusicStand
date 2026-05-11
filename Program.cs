@@ -2,7 +2,7 @@
 using Avalonia;
 using Avalonia.ReactiveUI;
 
-namespace AvaloniaInkCanvasDemo;
+namespace Coda;
 
 // Inking control for Avalonia: https://github.com/dotnet-campus/DotNetCampus.InkCanvas
 // Core PDF renderer: https://mupdf.com/

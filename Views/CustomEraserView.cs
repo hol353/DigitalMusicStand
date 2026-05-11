@@ -1,20 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-
 using DotNetCampus.Inking.Erasing;
 
-namespace AvaloniaInkCanvasDemo.Views.ErasingView;
+namespace Coda;
 
+/// <summary>
+/// Represents the control shown at the mouse/stylus position when eraser is selected.
+/// </summary>
 internal class CustomEraserView : Control, IEraserView
 {
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public CustomEraserView()
     {
         ViewPath = Geometry.Parse("M0,5.0093855C0,2.24277828,2.2303666,0,5.00443555,0L24.9955644,0C27.7594379,0,30,2.23861485,30,4.99982044L30,17.9121669C30,20.6734914,30,25.1514578,30,27.9102984L30,40.0016889C30,42.7621799,27.7696334,45,24.9955644,45L5.00443555,45C2.24056212,45,0,42.768443,0,39.9906145L0,5.0093855z");

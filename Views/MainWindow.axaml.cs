@@ -1,19 +1,26 @@
 ﻿using Avalonia.Controls;
-using AvaloniaInkCanvasDemo.ViewModels;
 
-namespace AvaloniaInkCanvasDemo.Views;
+namespace Coda;
 
+/// <summary>
+/// Represents the main window of the application.
+/// </summary>
 public partial class MainWindow : Window
 {
+    /// <summary>Constructor</summary>
     public MainWindow()
     {
         InitializeComponent();
     }
 
+    /// <summary>
+    /// Invoked when the application is closing.
+    /// </summary>
+    /// <param name="e">Event arguments.</param>
     protected override void OnClosing(WindowClosingEventArgs e)
     {
-        var mainViewModel = DataContext as MainViewModel;
-        mainViewModel.SaveAnnotations();   
+        MainView mainView = Content as MainView;
+        mainView.OnClosing();
         base.OnClosing(e); // Call the base method
     }
 }

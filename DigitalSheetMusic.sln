@@ -3,13 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaloniaInkCanvasDemo", "AvaloniaInkCanvasDemo.csproj", "{241C853F-7848-0332-ACCD-EBF34DA8AE85}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetCampus.AvaloniaInkCanvas", "..\DotNetCampus.InkCanvas\src\DotNetCampus.AvaloniaInkCanvas\DotNetCampus.AvaloniaInkCanvas.csproj", "{35F87CE6-6A6E-44D1-B116-B6D5BCCBD787}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetCampus.InkCanvas.InkCore", "..\DotNetCampus.InkCanvas\src\DotNetCampus.InkCanvas.InkCore\DotNetCampus.InkCanvas.InkCore.csproj", "{76E07E96-638B-4A47-B55F-6809498F5DB1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetCampus.InkCanvas.SkiaInk", "..\DotNetCampus.InkCanvas\src\DotNetCampus.InkCanvas.SkiaInk\DotNetCampus.InkCanvas.SkiaInk.csproj", "{358157CD-A434-42DD-95A9-CC9AC576A6FB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Coda", "Coda.csproj", "{241C853F-7848-0332-ACCD-EBF34DA8AE85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

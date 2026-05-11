@@ -1,0 +1,1 @@
+This application renders sheet music (pdf files) and allows annotations using a stylus. It is designed to operate on a tablet device that is put onto a music stand during rehearsals or performances, replacing the need for a folder of paper sheet music.

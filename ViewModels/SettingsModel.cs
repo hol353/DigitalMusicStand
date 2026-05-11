@@ -1,10 +1,8 @@
-using System;
-using System.Collections.ObjectModel;
-using System.IO;
-using Avalonia.Media;
+namespace Coda;
 
-namespace AvaloniaInkCanvasDemo.ViewModels;
-
+/// <summary>
+/// Represents the application settings.
+/// </summary>
 public class SettingsModel
 {
     /// <summary>
