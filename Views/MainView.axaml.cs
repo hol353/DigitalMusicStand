@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform.Storage;
 using Avalonia.Skia;
 using DotNetCampus.Inking;
 using DotNetCampus.Inking.Erasing;
@@ -52,27 +52,86 @@ public partial class MainView : UserControl
     /// </summary>
     /// <param name="sender">Sender of the event.</param>
     /// <param name="e">Event arguments.</param>
-    private async void OpenPdfButton_OnClick(object sender, RoutedEventArgs e)
+    private void ToggleOpenButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        FilePopup.IsOpen = !FilePopup.IsOpen;
+        if (FilePopup.IsOpen)
+        {
+            ComboBox.SelectionChanged += OnComboBoxSelectionChanged;
+            ListBox.SelectionChanged += OnListBoxSelectionChanged;
+            foreach (Button button in NavigationButtons.Children)
+                button.Click += OnNavigationButtonClicked;
+        }
+        else
+        {
+            ComboBox.SelectionChanged -= OnComboBoxSelectionChanged;
+            ListBox.SelectionChanged -= OnListBoxSelectionChanged;
+            foreach (Button button in NavigationButtons.Children)
+                button.Click -= OnNavigationButtonClicked;
+        }
+    }
+
+    /// <summary>
+    /// User has clicked a navigation button.
+    /// </summary>
+    /// <param name="sender">The button clicked.</param>
+    /// <param name="e">Event arguments.</param>
+    private void OnNavigationButtonClicked(object sender, RoutedEventArgs e)
     {
         var model = DataContext as MainViewModel;
 
-        var storageProvider = ((Window)this.VisualRoot).StorageProvider;
-        var storageFolder = await storageProvider.TryGetFolderFromPathAsync(model.Settings.MusicLibraryBaseDirectory);
-        var result = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        var button = sender as Button;
+        string letter = button.Content.ToString();
+        string selectedFile;
+        if (letter == "#")
+            selectedFile = model.FileNames.FirstOrDefault(file => Int32.TryParse(file, out int i));
+        else
+            selectedFile = model.FileNames.FirstOrDefault(file => file.StartsWith(letter, ignoreCase: true, CultureInfo.CurrentCulture));
+        if (selectedFile != null)
         {
-            Title = "Open PDF File",
-
-            SuggestedStartLocation = storageFolder,
-            FileTypeFilter = new[] { new FilePickerFileType("PDF Files") { Patterns = new[] { "*.pdf" } } }
-        });
-
-        if (result.Count > 0)
-        {
-            var pdfFilePath = result[0].Path.LocalPath;
-            Load(pdfFilePath);
-            
+            ListBox.ScrollIntoView(model.FileNames.Last());
+            ListBox.ScrollIntoView(selectedFile);
         }
     }
+
+    /// <summary>
+    /// User has selected a file to open in the treeview
+    /// </summary>
+    /// <param name="sender">The treeview</param>
+    /// <param name="e">The event arguments.</param>
+    private void OnComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var model = DataContext as MainViewModel;
+
+        var comboBox = (ComboBox)sender!;
+        var relativeDirectory = comboBox.SelectedItem.ToString();
+
+        model.ReadFiles(relativeDirectory);
+    }
+
+    /// <summary>
+    /// User has selected a file to open in the treeview
+    /// </summary>
+    /// <param name="sender">The treeview</param>
+    /// <param name="e">The event arguments.</param>
+    private void OnListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var model = DataContext as MainViewModel;
+
+        var listBox = (ListBox)sender!;
+        var relativePdfFilePath = listBox.SelectedItem.ToString();
+
+        var relativeDirectory = ComboBox.SelectedItem.ToString();
+        var absoluteDirectory = relativeDirectory.ToAbsolute(model.Settings.MusicLibraryBaseDirectory);
+
+        var absolutePdfFilePath = Path.Combine(absoluteDirectory, relativePdfFilePath) + ".pdf";
+        if (File.Exists(absolutePdfFilePath))
+        {
+            Load(absolutePdfFilePath);
+            ToggleOpenButton_OnClick(null, null);
+        }
+    }
+
 
     /// <summary>
     /// Load a pdf file.
@@ -115,7 +174,7 @@ public partial class MainView : UserControl
         {
             Console.WriteLine($"Error rendering PDF: {ex.Message}");
         }
-    }    
+    }
 
     /// <summary>
     /// Invoked when a color is selected from the drop down.
@@ -159,8 +218,10 @@ public partial class MainView : UserControl
     internal void OnClosing()
     {
         var model = DataContext as MainViewModel;
-        var pages = MusicCanvas.Children.Cast<SheetMusicControl>()
-                                        .Select(child => child.Strokes);
-        model.Annotations.Save(MusicCanvas.Bounds, pages);
+        var pages = MusicCanvas?.Children.Cast<SheetMusicControl>()
+                                         .Select(child => child.Strokes);
+        if (pages != null)
+            model.Annotations.Save(MusicCanvas.Bounds, pages);
     }
+   
 }

@@ -25,8 +25,7 @@ public class Annotations(MainViewModel Model)
     /// <returns>List of annotations.</returns>
     public IReadOnlyList<SkiaStroke> Get(int pageNumber)
     {
-        var pdfDirectory = Path.GetDirectoryName(Model.PdfFilePath);
-        var pdfRelativeDirectory = pdfDirectory.Replace(Model.Settings.MusicLibraryBaseDirectory, "").TrimStart("/").ToString();
+        var pdfRelativeDirectory = Path.GetDirectoryName(Model.PdfFilePath).ToRelative(Model.Settings.MusicLibraryBaseDirectory);
         var pdfFileName = Path.GetFileNameWithoutExtension(Model.PdfFilePath);
         var svgFileName = Path.Combine(Model.BaseDirectory, "Annotations", pdfRelativeDirectory, $"{pdfFileName}.{pageNumber}.svg");
         List<SkiaStroke> strokes = new();
@@ -71,8 +70,7 @@ public class Annotations(MainViewModel Model)
     {
         if (Model.PdfFilePath != null)
         {
-            var pdfDirectory = Path.GetDirectoryName(Model.PdfFilePath);
-            var pdfRelativeDirectory = pdfDirectory.Replace(Model.Settings.MusicLibraryBaseDirectory, "").TrimStart("/").ToString();
+            var pdfRelativeDirectory = Path.GetDirectoryName(Model.PdfFilePath).ToRelative(Model.Settings.MusicLibraryBaseDirectory);
             var pdfFileName = Path.GetFileNameWithoutExtension(Model.PdfFilePath);
             var annotationsBaseDirectory = Path.Combine(Model.BaseDirectory, "Annotations");
             var annotationPdfDirectory = Path.Combine(annotationsBaseDirectory, pdfRelativeDirectory);

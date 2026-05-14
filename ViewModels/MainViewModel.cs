@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using Avalonia.Media;
 using ReactiveUI;
 
@@ -25,6 +26,8 @@ public class MainViewModel : ReactiveObject
         ];
         Settings = new();
         Annotations = new(this);
+        ReadDirectories(Settings.MusicLibraryBaseDirectory);
+        ReadFiles(SelectedDirectory);
     }
 
     /// <summary>
@@ -43,6 +46,21 @@ public class MainViewModel : ReactiveObject
     public string BaseDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DigitalSheetMusic");
 
     /// <summary>
+    /// Collection of relative directory paths.
+    /// </summary>
+    public ObservableCollection<string> Directories { get; } = new();
+
+    /// <summary>
+    /// Currently selected directory path.
+    /// </summary>
+    public string SelectedDirectory { get; set; } = "Brass Band A-L";
+
+    /// <summary>
+    /// Collection of file names (no extension)
+    /// </summary>
+    public ObservableCollection<string> FileNames { get; } = new();
+
+    /// <summary>
     /// The application settings
     /// </summary>
     public SettingsModel Settings { get; }
@@ -51,4 +69,24 @@ public class MainViewModel : ReactiveObject
     /// The instance to load/save annotations.
     /// </summary>
     public Annotations Annotations { get; }
+
+    /// <summary>
+    /// Read all directories and files.
+    /// </summary>
+    private void ReadDirectories(string directory)
+    {
+        foreach (var dir in Directory.GetDirectories(directory).Order())
+            Directories.Add(dir.ToRelative(Settings.MusicLibraryBaseDirectory));
+    }
+    
+    /// <summary>
+    /// Read all directories and files.
+    /// </summary>
+    public void ReadFiles(string relativeDirectory)
+    {
+        var absoluteDirectory = relativeDirectory.ToAbsolute(Settings.MusicLibraryBaseDirectory);        
+        FileNames.Clear();
+        foreach (var file in Directory.GetFiles(absoluteDirectory).Order())
+            FileNames.Add(Path.GetFileNameWithoutExtension(file));
+    }
 }

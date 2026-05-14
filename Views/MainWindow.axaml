@@ -6,7 +6,7 @@
         xmlns:views="clr-namespace:Coda"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Coda.MainWindow"
-        Icon="/Assets/coda.png"
+        Icon="/Assets/Coda.png"
         Title="Coda">
         <views:MainView />
 </Window>
