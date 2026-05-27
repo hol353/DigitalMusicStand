@@ -2,7 +2,7 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 
-namespace Coda;
+namespace BlackFolder;
 
 /// <summary>
 /// Represents the application. It loads the main window and view along with the model.

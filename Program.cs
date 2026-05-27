@@ -2,7 +2,7 @@
 using Avalonia;
 using Avalonia.ReactiveUI;
 
-namespace Coda;
+namespace BlackFolder;
 
 // Inking control for Avalonia: https://github.com/dotnet-campus/DotNetCampus.InkCanvas
 // Core PDF renderer: https://mupdf.com/

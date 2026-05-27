@@ -10,7 +10,7 @@ using DotNetCampus.Inking;
 using DotNetCampus.Inking.Primitive;
 using SkiaSharp;
 
-namespace Coda;
+namespace BlackFolder;
 
 /// <summary>
 /// Represents all annotations for a file.

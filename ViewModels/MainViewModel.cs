@@ -5,7 +5,7 @@ using System.Linq;
 using Avalonia.Media;
 using ReactiveUI;
 
-namespace Coda;
+namespace BlackFolder;
 
 public class MainViewModel : ReactiveObject
 {

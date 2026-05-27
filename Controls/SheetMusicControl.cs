@@ -7,7 +7,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using DotNetCampus.Inking;
 
-namespace Coda;
+namespace BlackFolder;
 
 public class SheetMusicControl : InkCanvas
 {

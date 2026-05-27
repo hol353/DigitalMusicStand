@@ -12,7 +12,7 @@ using DotNetCampus.Inking.Erasing;
 using MuPDFCore;
 using SkiaSharp;
 
-namespace Coda;
+namespace BlackFolder;
 
 /// <summary>
 /// Represents the main view of the application.

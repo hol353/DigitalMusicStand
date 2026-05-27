@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Coda;
+namespace BlackFolder;
 
 /// <summary>
 /// Extension methods.
@@ -16,7 +16,7 @@ public static class Extensions
     /// <param name="basePath">The path to make it relative to.</param>
     public static string ToRelative(this string path, string basePath)
     {
-        return path.Replace(basePath, "").TrimStart("/").ToString();
+        return path.Replace(basePath, "").TrimStart('/').ToString();
     }
 
     /// <summary>

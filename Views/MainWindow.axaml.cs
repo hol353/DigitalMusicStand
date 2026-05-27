@@ -1,6 +1,6 @@
 ﻿using Avalonia.Controls;
 
-namespace Coda;
+namespace BlackFolder;
 
 /// <summary>
 /// Represents the main window of the application.
