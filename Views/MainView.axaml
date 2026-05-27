@@ -14,7 +14,9 @@
     </Design.DataContext>
     <Grid RowDefinitions="Auto,*" Background="Gray">
         <StackPanel x:Name="Toolbar" Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,10">
-            <Button x:Name="OpenButton" Margin="10,0,0,0" Click="ToggleOpenButton_OnClick">Open</Button>
+            <Button x:Name="OpenButton" Margin="10,0,0,0" Click="ToggleOpenButton_OnClick">
+                <Image Source="/Assets/folder-open.png" />
+            </Button>
             <Popup x:Name="FilePopup"
                 PlacementTarget="{Binding #OpenButton}"
                 Placement="BottomEdgeAlignedLeft"
@@ -58,8 +60,16 @@
                     </DockPanel>
                 </Border>
             </Popup>            
-            <Button x:Name="PenModeButton" Margin="10,0,0,0" Click="PenModeButton_OnClick">Pen</Button>
-            <Button x:Name="EraserModeButton" Margin="10,0,0,0" Click="EraserModeButton_OnClick">Eraser</Button>
+            <ToggleButton x:Name="PenModeButton" Margin="10,0,0,0" Click="PenModeButton_OnClick">
+                <Panel>
+                    <Image Source="/Assets/pencil.png" />
+                </Panel>
+            </ToggleButton>
+            <ToggleButton x:Name="EraserModeButton" Margin="10,0,0,0" Click="EraserModeButton_OnClick">
+                <Panel>
+                    <Image Source="/Assets/eraser.png" />
+                </Panel>            
+            </ToggleButton>
             <ComboBox SelectedIndex="0" Margin="10,0,0,0" Background="Transparent" ItemsSource="{Binding SolidColorBrushCollection}" SelectionChanged="SelectingItemsControl_OnSelectionChanged">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -68,7 +78,7 @@
                 </ComboBox.ItemsPanel>
                 <ComboBox.ItemTemplate>
                     <DataTemplate DataType="IBrush">
-                        <Ellipse Fill="{Binding .}" Width="20" Height="20"></Ellipse>
+                        <Ellipse Fill="{Binding .}" Width="32" Height="32"></Ellipse>
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>

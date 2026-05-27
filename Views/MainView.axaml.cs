@@ -34,7 +34,11 @@ public partial class MainView : UserControl
     /// <param name="e">Event arguments.</param>
     private void PenModeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        SetInkCanvasEditingMode(InkCanvasEditingMode.Ink);
+        if (PenModeButton.IsChecked == true)
+            SetInkCanvasEditingMode(InkCanvasEditingMode.Ink);
+        else
+            SetInkCanvasEditingMode(InkCanvasEditingMode.None);
+        EraserModeButton.IsChecked = false;
     }
 
     /// <summary>
@@ -44,7 +48,12 @@ public partial class MainView : UserControl
     /// <param name="e">Event arguments.</param>
     private void EraserModeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        SetInkCanvasEditingMode(InkCanvasEditingMode.EraseByPoint);
+        if (EraserModeButton.IsChecked == true)
+            SetInkCanvasEditingMode(InkCanvasEditingMode.EraseByPoint);
+        else
+            SetInkCanvasEditingMode(InkCanvasEditingMode.None);
+
+        PenModeButton.IsChecked = false;
     }
 
     /// <summary>
@@ -69,6 +78,7 @@ public partial class MainView : UserControl
             foreach (Button button in NavigationButtons.Children)
                 button.Click -= OnNavigationButtonClicked;
         }
+        SetInkCanvasEditingMode(InkCanvasEditingMode.None);
     }
 
     /// <summary>
