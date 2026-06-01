@@ -168,15 +168,12 @@ public partial class MainView : UserControl
                 document.WriteImage(page, 2, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
                 memoryStream.Seek(0, SeekOrigin.Begin);
 
-                var sheetMusicControl = new SheetMusicControl();
-                sheetMusicControl.Image = new Bitmap(memoryStream);
+                var svg = model.Annotations.Get(page + 1);
+
+                var sheetMusicControl = new SheetMusicControl(new Bitmap(memoryStream), svg);
                 sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
                 sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
-
-                var annotations = model.Annotations.Get(page + 1);
-                foreach (var annotation in annotations)
-                    sheetMusicControl.AvaloniaSkiaInkCanvas.AddStaticStroke(annotation);
-
+                
                 MusicCanvas.Children.Add(sheetMusicControl);
             }
         }
@@ -228,10 +225,9 @@ public partial class MainView : UserControl
     internal void OnClosing()
     {
         var model = DataContext as MainViewModel;
-        var pages = MusicCanvas?.Children.Cast<SheetMusicControl>()
-                                         .Select(child => child.Strokes);
+        var pages = MusicCanvas?.Children.Cast<SheetMusicControl>();
         if (pages != null)
-            model.Annotations.Save(MusicCanvas.Bounds, pages);
+            model.Annotations.Save(pages);
     }
    
 }

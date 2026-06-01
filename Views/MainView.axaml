@@ -13,7 +13,7 @@
         <vm:MainViewModel />
     </Design.DataContext>
     <Grid RowDefinitions="Auto,*" Background="Gray">
-        <StackPanel x:Name="Toolbar" Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,10">
+        <StackPanel x:Name="Toolbar" Grid.Row="0" Margin="10,0,0,0" Orientation="Horizontal" HorizontalAlignment="Center" >
             <Button x:Name="OpenButton" Margin="10,0,0,0" Click="ToggleOpenButton_OnClick">
                 <Image Source="/Assets/folder-open.png" />
             </Button>
@@ -85,7 +85,7 @@
         </StackPanel>
         <ScrollViewer Grid.Row="1" x:Name="Scroller" VerticalScrollBarVisibility="Visible">
             <StackPanel x:Name="MusicCanvas"> 
-            </StackPanel>
+        </StackPanel>
         </ScrollViewer>                     
 
     </Grid>
