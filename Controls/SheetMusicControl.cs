@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -26,7 +28,13 @@ public class SheetMusicControl : InkCanvas
 
     /// <summary>The size of the control.</summary>
     private Size actualSize;
-    
+
+    /// <summary>
+    /// The current scale factor for pinch zoom. Ranges from 0.5-3.0
+    /// </summary>
+    private double scale = 1.0;
+
+    private Point scaleOrigin;
     /// <summary>
     /// Constructor.
     /// </summary>
@@ -47,6 +55,33 @@ public class SheetMusicControl : InkCanvas
                 AvaloniaSkiaInkCanvas.AddStaticStroke(stroke);
             }
         }
+        var pinchZoomRecognizer = new PinchGestureRecognizer();
+        GestureRecognizers.Add(pinchZoomRecognizer);
+        AddHandler(InputElement.PinchEvent, OnPinchZoom);
+        AddHandler(InputElement.PinchEndedEvent, OnPinchEndedZoom);
+    }
+
+
+    /// <summary>
+    /// Handles pinch zoom gestures.
+    /// </summary>
+    public void OnPinchZoom(object sender, PinchEventArgs e)
+    {
+        scale = e.Scale;
+        scaleOrigin = e.ScaleOrigin;
+
+        // Clamp the scale to prevent excessive zooming.
+        scale = Math.Clamp(scale, 0.5, 3.0);
+
+        InvalidateMeasure();
+        InvalidateVisual();
+
+        e.Handled = true;
+    }    
+
+    private void OnPinchEndedZoom(object sender, PinchEndedEventArgs e)
+    {
+        
     }
 
     /// <summary>
@@ -65,7 +100,8 @@ public class SheetMusicControl : InkCanvas
             double imageAspectRatio = image.Size.Height / image.Size.Width;
             width = height / imageAspectRatio;
         }
-        actualSize = new Size(width, height);
+
+        actualSize = new Size(width * scale, height * scale);
         base.MeasureCore(actualSize);
 
         var paths = svg?.Paths;
@@ -74,9 +110,21 @@ public class SheetMusicControl : InkCanvas
             // Determine scaling factor because the strokes may have been made on different bounds to the canvas.
             double scaleX = actualSize.Width / svg.Width;
             double scaleY = actualSize.Height / svg.Height;
+
+            // Apply zoom scale
+            var offsetX = scaleOrigin.X - (scaleOrigin.X * scale);
+            var offsetY = scaleOrigin.Y - (scaleOrigin.Y * scale);
+            //scaleX *= scale;
+            //scaleY *= scale;
+            
             if (scaleX != 1 || scaleY != 1)
             {
-                var translation = SKMatrix.CreateScale((float)scaleX, (float)scaleY);
+                SKMatrix translation;
+                if (scale == 1)
+                    translation = SKMatrix.CreateScale((float)scaleX, (float)scaleY);
+                else
+                    translation = SKMatrix.CreateScaleTranslation((float)scaleX, (float)scaleY,
+                                                                  (float)offsetX, (float)offsetY);
                 foreach (var stroke in strokes)
                     stroke.SetTransform(translation);
             }
@@ -101,7 +149,11 @@ public class SheetMusicControl : InkCanvas
     /// <param name="context">The drawing context to draw on.</param>
     public override void Render(DrawingContext context)
     {
-        var rectangle = new Rect(new Point(), Bounds.Size);
+        var scaledWidth = Bounds.Width;// * scale;
+        var scaledHeight = Bounds.Height;// * scale;
+        var offsetX = scaleOrigin.X - (scaleOrigin.X * scale);
+        var offsetY = scaleOrigin.Y - (scaleOrigin.Y * scale);
+        var rectangle = new Rect(new Point(offsetX, offsetY), new Size(scaledWidth, scaledHeight));
 
         if (image != null)
             context.DrawImage(image, new Rect(0, 0, image.Size.Width, image.Size.Height), rectangle);
