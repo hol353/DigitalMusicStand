@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -29,10 +31,18 @@ public class SheetMusicControl : InkCanvas
     /// <summary>The size of the control.</summary>
     private Size actualSize;
 
-    /// <summary>
-    /// The current scale factor for pinch zoom. Ranges from 0.5-3.0
-    /// </summary>
+    /// <summary>The current scale factor for pinch zoom. Ranges from 0.5-3.0</summary>
     private double scale = 1.0;
+
+    /// <summary>The current horizontal offset from the left edge of the viewport.</summary>
+    private double offsetX;
+
+    /// <summary>The current vertical offset from the top edge of the viewport.</summary>
+    private double offsetY;
+
+
+    /// <summary>The current vertical offset from the top edge of the viewport.</summary>
+    private Rect renderRectangle;
 
     private Point scaleOrigin;
     /// <summary>
@@ -55,12 +65,62 @@ public class SheetMusicControl : InkCanvas
                 AvaloniaSkiaInkCanvas.AddStaticStroke(stroke);
             }
         }
+        this.Tapped += OnSingleTap;
+        this.DoubleTapped += OnDoubleTap;
+
         var pinchZoomRecognizer = new PinchGestureRecognizer();
         GestureRecognizers.Add(pinchZoomRecognizer);
         AddHandler(InputElement.PinchEvent, OnPinchZoom);
         AddHandler(InputElement.PinchEndedEvent, OnPinchEndedZoom);
     }
 
+    /// <summary>
+    /// Handles double-tap gestures.
+    /// </summary>
+    private CancellationTokenSource singleTapCancellationToken;
+
+    private async void OnSingleTap(object sender, TappedEventArgs e)
+    {
+        // Cancel any previous single-tap logic if a double-tap is detected
+        singleTapCancellationToken?.Cancel();
+        singleTapCancellationToken = new CancellationTokenSource();
+
+        try
+        {
+            // Wait for a short delay to check if a double-tap occurs
+            await Task.Delay(300, singleTapCancellationToken.Token); // 300ms is a common double-tap threshold
+
+            // If no double-tap occurs, execute single-tap logic
+            var scrollViewer = this.FindLogicalAncestorOfType<ScrollViewer>();
+            double scrollAmount = scrollViewer.Viewport.Height;  // scroll full page
+            Point point = e.GetPosition(scrollViewer);
+            if (point.Y < scrollViewer.Viewport.Height / 2)
+                scrollAmount = -scrollAmount;
+
+            scrollViewer.Offset = new Vector(scrollViewer.Offset.X, scrollViewer.Offset.Y + scrollAmount);
+            e.Handled = true;
+        }
+        catch (TaskCanceledException)
+        {
+            // Double-tap detected, cancel single-tap logic
+        }
+    }
+
+    /// <summary>
+    /// Handles double-tap gestures.
+    /// </summary>
+    private void OnDoubleTap(object sender, TappedEventArgs e)
+    {
+        singleTapCancellationToken?.Cancel();
+        var scrollViewer = this.FindLogicalAncestorOfType<ScrollViewer>();
+        double scrollAmount = scrollViewer.Viewport.Height / 2;  // scroll half page
+        Point point = e.GetPosition(scrollViewer);
+        if (point.Y < scrollViewer.Viewport.Height / 2)
+            scrollAmount = -scrollAmount;
+
+        scrollViewer.Offset = new Vector(scrollViewer.Offset.X, scrollViewer.Offset.Y + scrollAmount);
+        e.Handled = true;
+    }
 
     /// <summary>
     /// Handles pinch zoom gestures.
@@ -102,6 +162,13 @@ public class SheetMusicControl : InkCanvas
         }
 
         actualSize = new Size(width * scale, height * scale);
+
+        // Apply zoom scale
+        offsetX = scaleOrigin.X - (scaleOrigin.X * scale);
+        offsetY = scaleOrigin.Y - (scaleOrigin.Y * scale);
+        double margin = 10;
+        renderRectangle = new Rect(new Point(offsetX, offsetY), new Size(width, height - margin));
+
         base.MeasureCore(actualSize);
 
         var paths = svg?.Paths;
@@ -111,12 +178,6 @@ public class SheetMusicControl : InkCanvas
             double scaleX = actualSize.Width / svg.Width;
             double scaleY = actualSize.Height / svg.Height;
 
-            // Apply zoom scale
-            var offsetX = scaleOrigin.X - (scaleOrigin.X * scale);
-            var offsetY = scaleOrigin.Y - (scaleOrigin.Y * scale);
-            //scaleX *= scale;
-            //scaleY *= scale;
-            
             if (scaleX != 1 || scaleY != 1)
             {
                 SKMatrix translation;
@@ -149,14 +210,12 @@ public class SheetMusicControl : InkCanvas
     /// <param name="context">The drawing context to draw on.</param>
     public override void Render(DrawingContext context)
     {
-        var scaledWidth = Bounds.Width;// * scale;
-        var scaledHeight = Bounds.Height;// * scale;
-        var offsetX = scaleOrigin.X - (scaleOrigin.X * scale);
-        var offsetY = scaleOrigin.Y - (scaleOrigin.Y * scale);
-        var rectangle = new Rect(new Point(offsetX, offsetY), new Size(scaledWidth, scaledHeight));
-
         if (image != null)
-            context.DrawImage(image, new Rect(0, 0, image.Size.Width, image.Size.Height), rectangle);
+        {
+            //var pen = new Pen(Brushes.Red, 2);
+            context.DrawRectangle(Brushes.White, null, renderRectangle);
+            context.DrawImage(image, new Rect(0, 0, image.Size.Width, image.Size.Height), renderRectangle);
+        }
         base.Render(context);
     }
 }

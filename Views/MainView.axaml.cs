@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -165,7 +166,7 @@ public partial class MainView : UserControl
             for (int page = 0; page < document.Pages.Length; page++)
             {
                 using var memoryStream = new MemoryStream();
-                document.WriteImage(page, 2, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
+                document.WriteImage(page, 1.5, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
                 memoryStream.Seek(0, SeekOrigin.Begin);
 
                 var svg = model.Annotations.Get(page + 1);
