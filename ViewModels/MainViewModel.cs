@@ -2,6 +2,8 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text.Json;
 using Avalonia.Media;
 using ReactiveUI;
 
@@ -9,6 +11,9 @@ namespace BlackFolder;
 
 public class MainViewModel : ReactiveObject
 {
+    /// <summary>Name of application.</summary>
+    private string applicationName;
+
     /// <summary>
     /// Constructor.
     /// </summary>
@@ -24,7 +29,8 @@ public class MainViewModel : ReactiveObject
             Brushes.Orange,
             Brushes.Purple
         ];
-        Settings = new();
+        this.applicationName = Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location);
+        Settings = LoadSettings();
         Annotations = new(this);
         ReadDirectories(Settings.MusicLibraryBaseDirectory);
         ReadFiles(SelectedDirectory);
@@ -43,7 +49,7 @@ public class MainViewModel : ReactiveObject
     /// <summary>
     /// The directory where the application stores settings/annotations.
     /// </summary>
-    public string BaseDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DigitalSheetMusic");
+    public string BaseDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), applicationName );
 
     /// <summary>
     /// Collection of relative directory paths.
@@ -88,5 +94,33 @@ public class MainViewModel : ReactiveObject
         FileNames.Clear();
         foreach (var file in Directory.GetFiles(absoluteDirectory).Order())
             FileNames.Add(Path.GetFileNameWithoutExtension(file));
+    }
+
+    /// <summary>
+    /// Load the application settings from disk.
+    /// </summary>
+    /// <returns>An instance of the settings model.</returns>
+    private SettingsModel LoadSettings()
+    {
+        try
+        {
+            Directory.CreateDirectory(BaseDirectory);
+            var path = Path.Combine(BaseDirectory, "settings.json");
+            if (!File.Exists(path))
+                throw new Exception($"{BaseDirectory}/settings.json file does not exist");
+
+            var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var json = File.ReadAllText(path);
+            return JsonSerializer.Deserialize<SettingsModel>(json, opts) ?? new SettingsModel();
+        }
+        catch (Exception)
+        {
+            string path = Path.Combine(BaseDirectory, "Library");
+            Directory.CreateDirectory(path);
+            return new SettingsModel() 
+            { 
+                MusicLibraryBaseDirectory = path
+            };
+        }
     }
 }
