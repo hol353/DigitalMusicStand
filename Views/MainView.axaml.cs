@@ -171,17 +171,27 @@ public partial class MainView : UserControl
 
                 var svg = model.Annotations.Get(page + 1);
 
-                var sheetMusicControl = new SheetMusicControl(new Bitmap(memoryStream), svg);
+                var sheetMusicControl = new SheetMusicControl(this, new Bitmap(memoryStream), svg);
                 sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
                 sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
                 
                 MusicCanvas.Children.Add(sheetMusicControl);
             }
+            SetToolbarVisibility(false);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error rendering PDF: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Sets the visibility of the toolbar.
+    /// </summary>
+    /// <param name="show">Show the toolbar?</param>
+    public void SetToolbarVisibility(bool show)
+    {
+        Toolbar.IsVisible = show;
     }
 
     /// <summary>
@@ -208,6 +218,9 @@ public partial class MainView : UserControl
     {
         foreach (InkCanvas inkCanvas in MusicCanvas.Children)
             inkCanvas.EditingMode = mode;
+
+        if (mode == InkCanvasEditingMode.None && MusicCanvas.Children.Count > 0)
+            SetToolbarVisibility(false);
     }
 
     /// <summary>

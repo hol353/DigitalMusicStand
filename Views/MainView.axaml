@@ -13,7 +13,7 @@
         <vm:MainViewModel />
     </Design.DataContext>
     <Grid RowDefinitions="Auto,*" Background="Gray">
-        <StackPanel x:Name="Toolbar" Grid.Row="0" Margin="10,0,0,0" Orientation="Horizontal" HorizontalAlignment="Center" >
+        <StackPanel x:Name="Toolbar" Grid.Row="0" Margin="10,0,0,0" Orientation="Horizontal" HorizontalAlignment="Left" >
             <Button x:Name="OpenButton" Margin="10,0,0,0" Click="ToggleOpenButton_OnClick">
                 <Image Source="/Assets/folder-open.png" />
             </Button>

@@ -24,6 +24,9 @@ public class SheetMusicControl : InkCanvas
 
     /// <summary>The annotations from the .svg to show.</summary>
     private SVG svg;
+    
+    /// <summary>The main view.</summary>
+    private MainView mainView;
 
     /// <summary>The actual annotations (strokes) to show.</summary>
     private List<SkiaStroke> strokes = new();
@@ -31,7 +34,7 @@ public class SheetMusicControl : InkCanvas
     /// <summary>The size of the control.</summary>
     private Size actualSize;
 
-    /// <summary>The current scale factor for pinch zoom. Ranges from 0.5-3.0</summary>
+    /// <summary>The current scale factor for pinch zoom. Ranges from 1.0-3.0</summary>
     private double scale = 1.0;
 
     /// <summary>The current horizontal offset from the left edge of the viewport.</summary>
@@ -40,20 +43,30 @@ public class SheetMusicControl : InkCanvas
     /// <summary>The current vertical offset from the top edge of the viewport.</summary>
     private double offsetY;
 
-
     /// <summary>The current vertical offset from the top edge of the viewport.</summary>
     private Rect renderRectangle;
 
     private Point scaleOrigin;
+    
+    /// <summary>Tracks the last pan position for mouse/touch dragging.</summary>
+    private Point lastPanPosition;
+    
+    /// <summary>Indicates if panning is currently active.</summary>
+    private bool isPanning;
+    
+    /// <summary>Additional manual pan offset applied during dragging.</summary>
+    private Point manualPanOffset;
+
     /// <summary>
     /// Constructor.
     /// </summary>
     /// <param name="image">The music bitmap to show.</param>
     /// <param name="svg">The annotations from the .svg to show.</param>
-    public SheetMusicControl(Bitmap image, SVG svg)
+    public SheetMusicControl(MainView mainView, Bitmap image, SVG svg)
     {
         this.image = image;
         this.svg = svg;
+        this.mainView = mainView;
         if (svg != null)
         {
             List<InkStylusPoint> points = new();
@@ -67,11 +80,55 @@ public class SheetMusicControl : InkCanvas
         }
         this.Tapped += OnSingleTap;
         this.DoubleTapped += OnDoubleTap;
+        this.PointerPressed += OnPointerPressed;
+        this.PointerMoved += OnPointerMoved;
+        this.PointerReleased += OnPointerReleased;
 
         var pinchZoomRecognizer = new PinchGestureRecognizer();
         GestureRecognizers.Add(pinchZoomRecognizer);
         AddHandler(InputElement.PinchEvent, OnPinchZoom);
         AddHandler(InputElement.PinchEndedEvent, OnPinchEndedZoom);
+    }
+
+    /// <summary>
+    /// Handles pointer pressed to start panning.
+    /// </summary>
+    private void OnPointerPressed(object sender, PointerPressedEventArgs e)
+    {
+        if (scale > 1.0 && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            isPanning = true;
+            lastPanPosition = e.GetPosition(this);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Handles pointer moved to pan the image.
+    /// </summary>
+    private void OnPointerMoved(object sender, PointerEventArgs e)
+    {
+        if (isPanning && scale > 1.0)
+        {
+            Point currentPosition = e.GetPosition(this);
+            double deltaX = currentPosition.X - lastPanPosition.X;
+            double deltaY = currentPosition.Y - lastPanPosition.Y;
+
+            manualPanOffset = new Point(manualPanOffset.X + deltaX, manualPanOffset.Y + deltaY);
+            lastPanPosition = currentPosition;
+
+            InvalidateMeasure();
+            InvalidateVisual();
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Handles pointer released to stop panning.
+    /// </summary>
+    private void OnPointerReleased(object sender, PointerReleasedEventArgs e)
+    {
+        isPanning = false;
     }
 
     /// <summary>
@@ -94,6 +151,14 @@ public class SheetMusicControl : InkCanvas
             var scrollViewer = this.FindLogicalAncestorOfType<ScrollViewer>();
             double scrollAmount = scrollViewer.Viewport.Height;  // scroll full page
             Point point = e.GetPosition(scrollViewer);
+
+            // If the tap is in the top-left corner, toggle the toolbar instead of scrolling
+            if (point.Y < 50 && point.X < Bounds.Left + 50)
+            {
+                mainView.SetToolbarVisibility(true);
+                return;
+            }
+            
             if (point.Y < scrollViewer.Viewport.Height / 2)
                 scrollAmount = -scrollAmount;
 
@@ -127,11 +192,13 @@ public class SheetMusicControl : InkCanvas
     /// </summary>
     public void OnPinchZoom(object sender, PinchEventArgs e)
     {
+        singleTapCancellationToken?.Cancel();
         scale = e.Scale;
         scaleOrigin = e.ScaleOrigin;
 
+        scale = (scale - 1) * 0.5 + 1; // Adjust the scale factor to make zooming less sensitive
         // Clamp the scale to prevent excessive zooming.
-        scale = Math.Clamp(scale, 0.5, 3.0);
+        scale = Math.Clamp(scale, 1.0, 3.0);
 
         InvalidateMeasure();
         InvalidateVisual();
@@ -161,13 +228,30 @@ public class SheetMusicControl : InkCanvas
             width = height / imageAspectRatio;
         }
 
+        // Calculate the actual size of the control based on the scale factor.
         actualSize = new Size(width * scale, height * scale);
 
-        // Apply zoom scale
-        offsetX = scaleOrigin.X - (scaleOrigin.X * scale);
-        offsetY = scaleOrigin.Y - (scaleOrigin.Y * scale);
+        // Calculate the scale origin relative to the control's size.
+        double scaleOriginX = scaleOrigin.X / width;
+        double scaleOriginY = scaleOrigin.Y / height;
+
+        // Center the scaled image within the control by offsetting half of the extra size.
+        var diffX = (actualSize.Width - width) * scaleOriginX;
+        var diffY = (actualSize.Height - height) * scaleOriginY;
+
+        if (manualPanOffset.X > 0 || manualPanOffset.Y > 0)
+        {
+            offsetX = manualPanOffset.X;
+            offsetY = manualPanOffset.Y;
+        }
+        else
+        {
+            offsetX = -diffX;
+            offsetY = -diffY;
+        }
+
         double margin = 10;
-        renderRectangle = new Rect(new Point(offsetX, offsetY), new Size(width, height - margin));
+        renderRectangle = new Rect(new Point(offsetX, offsetY), new Size(actualSize.Width, actualSize.Height - margin));
 
         base.MeasureCore(actualSize);
 
