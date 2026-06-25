@@ -135,12 +135,29 @@ public partial class MainView : UserControl
         var relativeDirectory = ComboBox.SelectedItem.ToString();
         var absoluteDirectory = relativeDirectory.ToAbsolute(model.Settings.MusicLibraryBaseDirectory);
 
+        MusicCanvas.Children.Clear();
+
+        // The file can be either .pdf or .txt (setlist).
         var absolutePdfFilePath = Path.Combine(absoluteDirectory, relativePdfFilePath) + ".pdf";
         if (File.Exists(absolutePdfFilePath))
-        {
             Load(absolutePdfFilePath);
-            ToggleOpenButton_OnClick(null, null);
+        else 
+        {
+            var absoluteTxtFilePath = Path.Combine(absoluteDirectory, relativePdfFilePath) + ".txt";
+            if (File.Exists(absoluteTxtFilePath))
+            {
+                // Handle .txt file case
+                string[] fileNames = File.ReadAllLines(absoluteTxtFilePath);
+                foreach (var fileName in fileNames)
+                {
+                    if (File.Exists(fileName))
+                    {
+                        Load(fileName);
+                    }
+                }
+            }
         }
+        ToggleOpenButton_OnClick(null, null);
     }
 
 
@@ -162,7 +179,6 @@ public partial class MainView : UserControl
             using MuPDFDocument document = new MuPDFDocument(ctx, pdfFilePath);
 
             // Convert the bitmap to an Avalonia Bitmap and set it to the MusicImage control
-            MusicCanvas.Children.Clear();
             for (int page = 0; page < document.Pages.Length; page++)
             {
                 using var memoryStream = new MemoryStream();
