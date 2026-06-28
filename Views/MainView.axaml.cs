@@ -95,12 +95,12 @@ public partial class MainView : UserControl
         string letter = button.Content.ToString();
         string selectedFile;
         if (letter == "#")
-            selectedFile = model.FileNames.FirstOrDefault(file => Int32.TryParse(file, out int i));
+            selectedFile = model.MusicLibrary.RelativeFileNames.FirstOrDefault(file => Int32.TryParse(file, out int i));
         else
-            selectedFile = model.FileNames.FirstOrDefault(file => file.StartsWith(letter, ignoreCase: true, CultureInfo.CurrentCulture));
+            selectedFile = model.MusicLibrary.RelativeFileNames.FirstOrDefault(file => file.StartsWith(letter, ignoreCase: true, CultureInfo.CurrentCulture));
         if (selectedFile != null)
         {
-            ListBox.ScrollIntoView(model.FileNames.Last());
+            ListBox.ScrollIntoView(model.MusicLibrary.RelativeFileNames.Last());
             ListBox.ScrollIntoView(selectedFile);
         }
     }
@@ -117,7 +117,7 @@ public partial class MainView : UserControl
         var comboBox = (ComboBox)sender!;
         var relativeDirectory = comboBox.SelectedItem.ToString();
 
-        model.ReadFiles(relativeDirectory);
+        model.MusicLibrary.SelectedDirectory = relativeDirectory;
     }
 
     /// <summary>
@@ -130,34 +130,37 @@ public partial class MainView : UserControl
         var model = DataContext as MainViewModel;
 
         var listBox = (ListBox)sender!;
-        var relativePdfFilePath = listBox.SelectedItem.ToString();
-
-        var relativeDirectory = ComboBox.SelectedItem.ToString();
-        var absoluteDirectory = relativeDirectory.ToAbsolute(model.Settings.MusicLibraryBaseDirectory);
-
-        MusicCanvas.Children.Clear();
-
-        // The file can be either .pdf or .txt (setlist).
-        var absolutePdfFilePath = Path.Combine(absoluteDirectory, relativePdfFilePath) + ".pdf";
-        if (File.Exists(absolutePdfFilePath))
-            Load(absolutePdfFilePath);
-        else 
+        if (listBox.SelectedItem != null)
         {
-            var absoluteTxtFilePath = Path.Combine(absoluteDirectory, relativePdfFilePath) + ".txt";
-            if (File.Exists(absoluteTxtFilePath))
+            var relativePdfFilePath = listBox.SelectedItem.ToString();
+
+            var relativeDirectory = model.MusicLibrary.SelectedDirectory;
+            var absoluteDirectory = relativeDirectory.ToAbsolute(model.Settings.MusicLibraryBaseDirectory);
+
+            MusicCanvas.Children.Clear();
+
+            // The file can be either .pdf or .txt (setlist).
+            var absolutePdfFilePath = Path.Combine(absoluteDirectory, relativePdfFilePath) + ".pdf";
+            if (File.Exists(absolutePdfFilePath))
+                Load(absolutePdfFilePath);
+            else 
             {
-                // Handle .txt file case
-                string[] fileNames = File.ReadAllLines(absoluteTxtFilePath);
-                foreach (var fileName in fileNames)
+                var absoluteTxtFilePath = Path.Combine(absoluteDirectory, relativePdfFilePath) + ".txt";
+                if (File.Exists(absoluteTxtFilePath))
                 {
-                    if (File.Exists(fileName))
+                    // Handle .txt file case
+                    string[] fileNames = File.ReadAllLines(absoluteTxtFilePath);
+                    foreach (var fileName in fileNames)
                     {
-                        Load(fileName);
+                        if (File.Exists(fileName))
+                        {
+                            Load(fileName);
+                        }
                     }
                 }
             }
+            ToggleOpenButton_OnClick(null, null);
         }
-        ToggleOpenButton_OnClick(null, null);
     }
 
 
@@ -172,33 +175,23 @@ public partial class MainView : UserControl
 
         try
         {
-            //Initialise the MuPDF context. This is needed to open or create documents.
-            using MuPDFContext ctx = new MuPDFContext();
-
-            //Open a PDF document
-            using MuPDFDocument document = new MuPDFDocument(ctx, pdfFilePath);
-
-            // Convert the bitmap to an Avalonia Bitmap and set it to the MusicImage control
-            for (int page = 0; page < document.Pages.Length; page++)
+            model.MusicLibrary.Open(pdfFilePath);
+            foreach (var file in model.MusicLibrary.OpenFiles)
             {
-                using var memoryStream = new MemoryStream();
-                document.WriteImage(page, 1.5, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
-                memoryStream.Seek(0, SeekOrigin.Begin);
-
-                var svg = model.Annotations.Get(page + 1);
-
-                var sheetMusicControl = new SheetMusicControl(this, new Bitmap(memoryStream), svg);
-                sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
-                sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
-                
-                MusicCanvas.Children.Add(sheetMusicControl);
+                foreach (var page in file.Pages)
+                {
+                    var sheetMusicControl = new SheetMusicControl(this, page);
+                    sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
+                    sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
+                    MusicCanvas.Children.Add(sheetMusicControl);
+                }
             }
-            SetToolbarVisibility(false);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error rendering PDF: {ex.Message}");
         }
+        SetToolbarVisibility(false);
     }
 
     /// <summary>
@@ -255,9 +248,8 @@ public partial class MainView : UserControl
     internal void OnClosing()
     {
         var model = DataContext as MainViewModel;
-        var pages = MusicCanvas?.Children.Cast<SheetMusicControl>();
-        if (pages != null)
-            model.Annotations.Save(pages);
+        model.MusicLibrary.CloseAll();
+        model.Settings.Save(model.BaseDirectory);
     }
    
 }

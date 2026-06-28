@@ -9,6 +9,7 @@ using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using DotNetCampus.Inking;
+using DotNetCampus.Inking.Contexts;
 using DotNetCampus.Inking.Primitive;
 using SkiaSharp;
 
@@ -19,17 +20,11 @@ namespace BlackFolder;
 /// </summary>
 public class SheetMusicControl : InkCanvas
 {
-    /// <summary>The music bitmap to show.</summary>
-    private Bitmap image;
+    /// <summary>The music page to show.</summary>
+    private MusicPage page;
 
-    /// <summary>The annotations from the .svg to show.</summary>
-    private SVG svg;
-    
     /// <summary>The main view.</summary>
     private MainView mainView;
-
-    /// <summary>The actual annotations (strokes) to show.</summary>
-    private List<SkiaStroke> strokes = new();
 
     /// <summary>The size of the control.</summary>
     private Size actualSize;
@@ -62,20 +57,18 @@ public class SheetMusicControl : InkCanvas
     /// </summary>
     /// <param name="image">The music bitmap to show.</param>
     /// <param name="svg">The annotations from the .svg to show.</param>
-    public SheetMusicControl(MainView mainView, Bitmap image, SVG svg)
+    public SheetMusicControl(MainView mainView, MusicPage page)
     {
-        this.image = image;
-        this.svg = svg;
+        this.page = page;
         this.mainView = mainView;
-        if (svg != null)
+        if (page.Annotations != null)
         {
             List<InkStylusPoint> points = new();
             StylusPointListSpan stylusPointListSpan = new(points, 0, points.Count);
-            foreach (var annotation in svg.Paths)
+            foreach (var annotation in page.Annotations.Paths)
             {
                 var stroke = SkiaStroke.CreateStaticStroke(InkId.NewId(), annotation.Path, stylusPointListSpan, annotation.Color, 0.1f, true, inkStrokeRenderer: null);
-                strokes.Add(stroke);
-                AvaloniaSkiaInkCanvas.AddStaticStroke(stroke);
+                AvaloniaSkiaInkCanvas.AddStaticStroke(stroke);              
             }
         }
         this.Tapped += OnSingleTap;
@@ -83,11 +76,33 @@ public class SheetMusicControl : InkCanvas
         this.PointerPressed += OnPointerPressed;
         this.PointerMoved += OnPointerMoved;
         this.PointerReleased += OnPointerReleased;
+        this.StrokeCollected += OnStrokeCollected;
+        this.StrokeErased += OnStrokeErased;
 
         var pinchZoomRecognizer = new PinchGestureRecognizer();
         GestureRecognizers.Add(pinchZoomRecognizer);
         AddHandler(InputElement.PinchEvent, OnPinchZoom);
         AddHandler(InputElement.PinchEndedEvent, OnPinchEndedZoom);
+    }
+
+    private void OnStrokeCollected(object sender, AvaloniaSkiaInkCanvasStrokeCollectedEventArgs e)
+    {
+        SaveStrokes();
+    }
+
+    private void OnStrokeErased(object sender, ErasingCompletedEventArgs e)
+    {
+        SaveStrokes();
+    }
+
+    /// <summary>
+    /// Saves the current annotations to the .svg file.
+    /// </summary>
+    private void SaveStrokes()
+    {
+        var bounds = new SKRect(0, 0, (float)actualSize.Width, (float)actualSize.Height);
+        var newAnnotations = Annotations.Create(bounds, AvaloniaSkiaInkCanvas.StaticStrokeList);
+        page.Annotations = newAnnotations;
     }
 
     /// <summary>
@@ -222,9 +237,9 @@ public class SheetMusicControl : InkCanvas
 
         var width = availableSize.Width;
         var height = scrollViewer.Bounds.Height;
-        if (image != null)
+        if (page.Bitmap != null)
         {
-            double imageAspectRatio = image.Size.Height / image.Size.Width;
+            double imageAspectRatio = page.Bitmap.Size.Height / page.Bitmap.Size.Width;
             width = height / imageAspectRatio;
         }
 
@@ -255,12 +270,12 @@ public class SheetMusicControl : InkCanvas
 
         base.MeasureCore(actualSize);
 
-        var paths = svg?.Paths;
+        var paths = page.Annotations?.Paths;
         if (paths != null)
         {
             // Determine scaling factor because the strokes may have been made on different bounds to the canvas.
-            double scaleX = actualSize.Width / svg.Width;
-            double scaleY = actualSize.Height / svg.Height;
+            double scaleX = actualSize.Width / page.Annotations.Width;
+            double scaleY = actualSize.Height / page.Annotations.Height;
 
             if (scaleX != 1 || scaleY != 1)
             {
@@ -270,7 +285,7 @@ public class SheetMusicControl : InkCanvas
                 else
                     translation = SKMatrix.CreateScaleTranslation((float)scaleX, (float)scaleY,
                                                                   (float)offsetX, (float)offsetY);
-                foreach (var stroke in strokes)
+                foreach (var stroke in AvaloniaSkiaInkCanvas.StaticStrokeList)
                     stroke.SetTransform(translation);
             }
         }
@@ -294,11 +309,11 @@ public class SheetMusicControl : InkCanvas
     /// <param name="context">The drawing context to draw on.</param>
     public override void Render(DrawingContext context)
     {
-        if (image != null)
+        if (page.Bitmap != null)
         {
             //var pen = new Pen(Brushes.Red, 2);
             context.DrawRectangle(Brushes.White, null, renderRectangle);
-            context.DrawImage(image, new Rect(0, 0, image.Size.Width, image.Size.Height), renderRectangle);
+            context.DrawImage(page.Bitmap, new Rect(0, 0, page.Bitmap.Size.Width, page.Bitmap.Size.Height), renderRectangle);
         }
         base.Render(context);
     }

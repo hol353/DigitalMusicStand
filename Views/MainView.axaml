@@ -23,10 +23,10 @@
                 IsLightDismissEnabled="True">
                 <Border Background="Gray" BorderBrush="Yellow" BorderThickness="1">
                     <DockPanel Background="Gray">
-                        <ComboBox x:Name="ComboBox" Background="Gray" ItemsSource="{Binding Directories}" SelectedItem="{Binding SelectedDirectory}" DockPanel.Dock="Top">
+                        <ComboBox x:Name="ComboBox" Background="Gray" ItemsSource="{Binding MusicLibrary.Directories}" SelectedItem="{Binding MusicLibrary.SelectedDirectory}" DockPanel.Dock="Top">
 
                         </ComboBox>
-                        <ListBox x:Name="ListBox" Background="Gray" ItemsSource="{Binding FileNames}" DockPanel.Dock="Left">
+                        <ListBox x:Name="ListBox" Background="Gray" ItemsSource="{Binding MusicLibrary.RelativeFileNames}" DockPanel.Dock="Left">
                         </ListBox>
                         <StackPanel x:Name="NavigationButtons" DockPanel.Dock="Right">
                             <Button Width="40">#</Button>

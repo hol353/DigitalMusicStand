@@ -30,11 +30,14 @@ public class MainViewModel : ReactiveObject
             Brushes.Purple
         ];
         this.applicationName = Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location);
-        Settings = LoadSettings();
-        Annotations = new(this);
-        ReadDirectories(Settings.MusicLibraryBaseDirectory);
-        ReadFiles(SelectedDirectory);
+        Settings = SettingsModel.Create(BaseDirectory);
+        MusicLibrary = new(this);
     }
+
+    /// <summary>
+    /// The music library instance.
+    /// </summary>
+    public MusicLibrary MusicLibrary { get; }
 
     /// <summary>
     /// Page of the currenly open pdf file.
@@ -52,75 +55,8 @@ public class MainViewModel : ReactiveObject
     public string BaseDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), applicationName );
 
     /// <summary>
-    /// Collection of relative directory paths.
-    /// </summary>
-    public ObservableCollection<string> Directories { get; } = new();
-
-    /// <summary>
-    /// Currently selected directory path.
-    /// </summary>
-    public string SelectedDirectory { get; set; } = "Brass Band A-L";
-
-    /// <summary>
-    /// Collection of file names (no extension)
-    /// </summary>
-    public ObservableCollection<string> FileNames { get; } = new();
-
-    /// <summary>
     /// The application settings
     /// </summary>
     public SettingsModel Settings { get; }
 
-    /// <summary>
-    /// The instance to load/save annotations.
-    /// </summary>
-    public Annotations Annotations { get; }
-
-    /// <summary>
-    /// Read all directories and files.
-    /// </summary>
-    private void ReadDirectories(string directory)
-    {
-        foreach (var dir in Directory.GetDirectories(directory).Order())
-            Directories.Add(dir.ToRelative(Settings.MusicLibraryBaseDirectory));
-    }
-    
-    /// <summary>
-    /// Read all directories and files.
-    /// </summary>
-    public void ReadFiles(string relativeDirectory)
-    {
-        var absoluteDirectory = relativeDirectory.ToAbsolute(Settings.MusicLibraryBaseDirectory);        
-        FileNames.Clear();
-        foreach (var file in Directory.GetFiles(absoluteDirectory).Order())
-            FileNames.Add(Path.GetFileNameWithoutExtension(file));
-    }
-
-    /// <summary>
-    /// Load the application settings from disk.
-    /// </summary>
-    /// <returns>An instance of the settings model.</returns>
-    private SettingsModel LoadSettings()
-    {
-        try
-        {
-            Directory.CreateDirectory(BaseDirectory);
-            var path = Path.Combine(BaseDirectory, "settings.json");
-            if (!File.Exists(path))
-                throw new Exception($"{BaseDirectory}/settings.json file does not exist");
-
-            var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<SettingsModel>(json, opts) ?? new SettingsModel();
-        }
-        catch (Exception)
-        {
-            string path = Path.Combine(BaseDirectory, "Library");
-            Directory.CreateDirectory(path);
-            return new SettingsModel() 
-            { 
-                MusicLibraryBaseDirectory = path
-            };
-        }
-    }
 }
