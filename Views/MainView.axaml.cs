@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.PanAndZoom;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using Avalonia.Skia;
 using DotNetCampus.Inking;
 using DotNetCampus.Inking.Erasing;
@@ -29,10 +29,88 @@ public partial class MainView : UserControl
     }
 
     /// <summary>
+    /// Invoked when the control is attached to the visual tree.
+    /// </summary>
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
+        zoomBorder.ResizeBehavior = ResizeBehaviorMode.ReapplyStretch;
+        
+        zoomBorder.SizeChanged += OnZoomBorderSizeChanged;
+        zoomBorder.PanStarted += OnPanStarted;
+        zoomBorder.ZoomStarted += OnZoomStarted;
+        base.OnAttachedToVisualTree(e);
+    }
+
+    /// <summary>
+    /// Invoked when the control is detached from the visual tree.
+    /// </summary>
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
+        zoomBorder.SizeChanged -= OnZoomBorderSizeChanged;
+        zoomBorder.PanStarted -= OnPanStarted;
+        zoomBorder.ZoomStarted -= OnZoomStarted;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    /// <summary>
+    /// Invoked when the size of the ZoomBorder changes. Resizes all child controls to fit the new size.
+    /// </summary>
+    private void OnZoomBorderSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        ResizeChildren(e);
+    }
+
+    /// <summary>
+    /// Invoked when the user starts panning. Sets the min and max offsets for the ZoomBorder based on the current zoom level and the height of the music canvas.
+    /// </summary>
+    private void OnPanStarted(object sender, PanEventArgs e)
+    {
+        double maximumHeight = (MusicCanvas.Children.Count-1) * Bounds.Height;
+        
+        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
+        if (Math.Round(zoomBorder.ZoomX, 2) == 1 && Math.Round(zoomBorder.ZoomY, 2) == 1)  // no zoom applied
+        {
+            zoomBorder.MinOffsetX = 0;
+            zoomBorder.MaxOffsetX = 0;
+            zoomBorder.MinOffsetY = -maximumHeight;
+            zoomBorder.MaxOffsetY = 0;
+        }
+    }
+
+    /// <summary>
+    /// Invoked when the user starts zooming. Sets the min and max offsets for the ZoomBorder based on the current zoom level.
+    /// </summary>
+    private void OnZoomStarted(object sender, ZoomEventArgs e)
+    {
+        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
+        if (Math.Round(zoomBorder.ZoomX, 2) > 1 || Math.Round(zoomBorder.ZoomY, 2) > 1)
+        {
+            zoomBorder.MinOffsetX = -Bounds.Width;
+            zoomBorder.MaxOffsetX = Bounds.Width;
+            zoomBorder.MinOffsetY = -Bounds.Height;
+            zoomBorder.MaxOffsetY = Bounds.Height;
+        }
+    }    
+
+    /// <summary>
+    /// Resizes all child controls to fit the new size of the ZoomBorder.
+    /// </summary>
+    private void ResizeChildren(SizeChangedEventArgs e)
+    {
+        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
+        zoomBorder.Zoom(1.0, Bounds.Width / 2, Bounds.Height / 2);
+        foreach (SheetMusicControl sheetMusicControl in MusicCanvas.Children)
+        {
+            sheetMusicControl.Width = e.NewSize.Width;
+            sheetMusicControl.Height = e.NewSize.Height;
+        }
+    }
+
+    /// <summary>
     /// Invoked when the pen button is clicked.
     /// </summary>
-    /// <param name="sender">Sender of the event.</param>
-    /// <param name="e">Event arguments.</param>
     private void PenModeButton_OnClick(object sender, RoutedEventArgs e)
     {
         if (PenModeButton.IsChecked == true)
@@ -45,8 +123,6 @@ public partial class MainView : UserControl
     /// <summary>
     /// Invoked when the eraser button is clicked.
     /// </summary>
-    /// <param name="sender">Sender of the event.</param>
-    /// <param name="e">Event arguments.</param>
     private void EraserModeButton_OnClick(object sender, RoutedEventArgs e)
     {
         if (EraserModeButton.IsChecked == true)
@@ -60,9 +136,7 @@ public partial class MainView : UserControl
     /// <summary>
     /// Invoked when the open button is clicked.
     /// </summary>
-    /// <param name="sender">Sender of the event.</param>
-    /// <param name="e">Event arguments.</param>
-    private void ToggleOpenButton_OnClick(object sender, RoutedEventArgs e)
+    private void OnOpenButtonClick(object sender, RoutedEventArgs e)
     {
         FilePopup.IsOpen = !FilePopup.IsOpen;
         if (FilePopup.IsOpen)
@@ -85,8 +159,6 @@ public partial class MainView : UserControl
     /// <summary>
     /// User has clicked a navigation button.
     /// </summary>
-    /// <param name="sender">The button clicked.</param>
-    /// <param name="e">Event arguments.</param>
     private void OnNavigationButtonClicked(object sender, RoutedEventArgs e)
     {
         var model = DataContext as MainViewModel;
@@ -108,8 +180,6 @@ public partial class MainView : UserControl
     /// <summary>
     /// User has selected a file to open in the treeview
     /// </summary>
-    /// <param name="sender">The treeview</param>
-    /// <param name="e">The event arguments.</param>
     private void OnComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var model = DataContext as MainViewModel;
@@ -123,8 +193,6 @@ public partial class MainView : UserControl
     /// <summary>
     /// User has selected a file to open in the treeview
     /// </summary>
-    /// <param name="sender">The treeview</param>
-    /// <param name="e">The event arguments.</param>
     private void OnListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var model = DataContext as MainViewModel;
@@ -159,11 +227,11 @@ public partial class MainView : UserControl
                     }
                 }
             }
-            ToggleOpenButton_OnClick(null, null);
+            OnOpenButtonClick(null, null);
+            SetToolbarVisibility(false);
         }
     }
-
-
+      
     /// <summary>
     /// Load a pdf file.
     /// </summary>
@@ -191,7 +259,6 @@ public partial class MainView : UserControl
         {
             Console.WriteLine($"Error rendering PDF: {ex.Message}");
         }
-        SetToolbarVisibility(false);
     }
 
     /// <summary>
@@ -206,9 +273,7 @@ public partial class MainView : UserControl
     /// <summary>
     /// Invoked when a color is selected from the drop down.
     /// </summary>
-    /// <param name="sender">Sender of the event.</param>
-    /// <param name="e">Event arguments.</param>
-    private void SelectingItemsControl_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void OnColourSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (e.AddedItems.Count is 1)
         {
@@ -229,7 +294,11 @@ public partial class MainView : UserControl
             inkCanvas.EditingMode = mode;
 
         if (mode == InkCanvasEditingMode.None && MusicCanvas.Children.Count > 0)
+        {
             SetToolbarVisibility(false);
+            InvalidateVisual();
+        }
+        
     }
 
     /// <summary>

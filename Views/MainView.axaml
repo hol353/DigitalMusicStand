@@ -83,10 +83,21 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
         </StackPanel>
-        <ScrollViewer Grid.Row="1" x:Name="Scroller" VerticalScrollBarVisibility="Visible">
-            <StackPanel x:Name="MusicCanvas"> 
-        </StackPanel>
-        </ScrollViewer>                     
+            <ZoomBorder x:Name="ZoomBorder1" Grid.Row="1" 
+                            Stretch="None"
+                            PanButton="Left"
+                            ZoomSpeed="1.1"
+                            MinZoomX="1.0"
+                            MaxZoomX="2.0"
+                            MinZoomY="1.0"
+                            MaxZoomY="2.0"
+                            EnableConstrains="True"
+                            EnableGestureRotation="False"
+                            Background="SlateBlue" ClipToBounds="True" Focusable="True"
+                            VerticalAlignment="Stretch" >
+                <StackPanel x:Name="MusicCanvas"> 
+                </StackPanel>
+            </ZoomBorder>
 
     </Grid>
 </UserControl>
