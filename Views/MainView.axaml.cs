@@ -5,6 +5,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.PanAndZoom;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Skia;
@@ -20,6 +21,12 @@ namespace BlackFolder;
 /// </summary>
 public partial class MainView : UserControl
 {
+    /// <summary>The time when the user started panning. Used to determine if a tap is a pan or a single tap.</summary>
+    private DateTime panStartTime = DateTime.MinValue;
+
+    /// <summary>The time the user spent panning. Used to determine if a tap is a pan or a single tap.</summary>
+    private TimeSpan panTime;
+
     /// <summary>
     /// Constructor
     /// </summary>
@@ -38,7 +45,9 @@ public partial class MainView : UserControl
         
         zoomBorder.SizeChanged += OnZoomBorderSizeChanged;
         zoomBorder.PanStarted += OnPanStarted;
-        zoomBorder.ZoomStarted += OnZoomStarted;
+        zoomBorder.PanEnded += OnPanEnded;
+        zoomBorder.ZoomDeltaChanged += (s, e) => OnZoomStarted(null, null);
+        this.Tapped += OnSingleTap;
         base.OnAttachedToVisualTree(e);
     }
 
@@ -50,7 +59,8 @@ public partial class MainView : UserControl
         var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
         zoomBorder.SizeChanged -= OnZoomBorderSizeChanged;
         zoomBorder.PanStarted -= OnPanStarted;
-        zoomBorder.ZoomStarted -= OnZoomStarted;
+        zoomBorder.PanEnded -= OnPanEnded;
+        this.Tapped -= OnSingleTap;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -59,7 +69,7 @@ public partial class MainView : UserControl
     /// </summary>
     private void OnZoomBorderSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        ResizeChildren(e);
+        ResizeChildren(e.NewSize);
     }
 
     /// <summary>
@@ -67,16 +77,16 @@ public partial class MainView : UserControl
     /// </summary>
     private void OnPanStarted(object sender, PanEventArgs e)
     {
-        double maximumHeight = (MusicCanvas.Children.Count-1) * Bounds.Height;
-        
+        panStartTime = DateTime.Now;
         var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
         if (Math.Round(zoomBorder.ZoomX, 2) == 1 && Math.Round(zoomBorder.ZoomY, 2) == 1)  // no zoom applied
-        {
-            zoomBorder.MinOffsetX = 0;
-            zoomBorder.MaxOffsetX = 0;
-            zoomBorder.MinOffsetY = -maximumHeight;
-            zoomBorder.MaxOffsetY = 0;
-        }
+            PanInYDirectionOnly();
+    }
+
+
+    private void OnPanEnded(object sender, PanEventArgs e)
+    {
+        panTime = DateTime.Now - panStartTime;
     }
 
     /// <summary>
@@ -97,15 +107,44 @@ public partial class MainView : UserControl
     /// <summary>
     /// Resizes all child controls to fit the new size of the ZoomBorder.
     /// </summary>
-    private void ResizeChildren(SizeChangedEventArgs e)
+    private void ResizeChildren(Avalonia.Size newSize)
     {
         var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
         zoomBorder.Zoom(1.0, Bounds.Width / 2, Bounds.Height / 2);
         foreach (SheetMusicControl sheetMusicControl in MusicCanvas.Children)
         {
-            sheetMusicControl.Width = e.NewSize.Width;
-            sheetMusicControl.Height = e.NewSize.Height;
+            sheetMusicControl.Width = newSize.Width;
+            sheetMusicControl.Height = newSize.Height;
         }
+    }
+
+    /// <summary>
+    /// Handles single-tap gestures.
+    /// </summary>
+    private void OnSingleTap(object sender, TappedEventArgs e)
+    {
+        // detect if the user is currently panning, and if so, ignore the tap
+        if (panTime.TotalMilliseconds < 400)
+        {
+            var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
+            var viewPortHeight = zoomBorder.Bounds.Height;
+            double scrollAmount = -viewPortHeight;  // scroll full page
+            Point point = e.GetPosition(zoomBorder);
+
+            // If the tap is in the center, toggle the toolbar instead of scrolling
+            if (point.Y > viewPortHeight / 3 && point.Y < 2 * viewPortHeight / 3)
+            {
+                SetToolbarVisibility(true);
+                return;
+            }
+            
+            if (point.Y < viewPortHeight / 2)
+                scrollAmount = -scrollAmount;
+
+            // Pan ZoomBorder to the tapped point
+            zoomBorder.PanDelta(0, scrollAmount);
+        }
+        e.Handled = true;
     }
 
     /// <summary>
@@ -295,10 +334,20 @@ public partial class MainView : UserControl
 
         if (mode == InkCanvasEditingMode.None && MusicCanvas.Children.Count > 0)
         {
+            PanInYDirectionOnly();
             SetToolbarVisibility(false);
+            ResizeChildren(new Avalonia.Size(Bounds.Width, Bounds.Height));
             InvalidateVisual();
         }
-        
+        else
+        {
+            // Turn panning off when in drawing or erasing mode, so that the user can draw/erase without panning the page.
+            var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
+            zoomBorder.MinOffsetX = zoomBorder.OffsetX;
+            zoomBorder.MaxOffsetX = zoomBorder.OffsetX;
+            zoomBorder.MinOffsetY = zoomBorder.OffsetY;
+            zoomBorder.MaxOffsetY = zoomBorder.OffsetY; 
+        }
     }
 
     /// <summary>
@@ -310,6 +359,19 @@ public partial class MainView : UserControl
         foreach (InkCanvas inkCanvas in MusicCanvas.Children)
             inkCanvas.AvaloniaSkiaInkCanvas.Settings.InkColor = colour;
     }
+
+    /// <summary>
+    /// Allows panning in the Y direction only.
+    /// </summary>
+    private void PanInYDirectionOnly()
+    {
+        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1"); 
+        double maximumHeight = (MusicCanvas.Children.Count-1) * Bounds.Height;       
+        zoomBorder.MinOffsetX = 0;
+        zoomBorder.MaxOffsetX = 0;
+        zoomBorder.MinOffsetY = -maximumHeight;
+        zoomBorder.MaxOffsetY = 0;
+    }    
 
     /// <summary>
     /// Application is about to close. Save annotations.

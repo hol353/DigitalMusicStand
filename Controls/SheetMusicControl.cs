@@ -33,9 +33,6 @@ public class SheetMusicControl : InkCanvas
     /// <summary>The time when the user started panning. Used to determine if a tap is a pan or a single tap.</summary>
     private DateTime panStartTime = DateTime.MinValue;
 
-    /// <summary>The time the user spent panning. Used to determine if a tap is a pan or a single tap.</summary>
-    private TimeSpan panTime;
-
     /// <summary>
     /// Constructor.
     /// </summary>
@@ -65,10 +62,7 @@ public class SheetMusicControl : InkCanvas
         base.OnAttachedToVisualTree(e);
         this.StrokeCollected += OnStrokeCollected;
         this.StrokeErased += OnStrokeErased;
-        this.Tapped += OnSingleTap;
-        var zoomBorder = this.FindLogicalAncestorOfType<ZoomBorder>();
-        zoomBorder.PanStarted += (s, e) => panStartTime = DateTime.Now;
-        zoomBorder.PanEnded += (s, e) => panTime = DateTime.Now - panStartTime;
+        this.SizeChanged += OnSizeChanged;
     }
 
     /// <summary>
@@ -80,7 +74,30 @@ public class SheetMusicControl : InkCanvas
         base.OnDetachedFromVisualTree(e);
         this.StrokeCollected -= OnStrokeCollected;
         this.StrokeErased -= OnStrokeErased;
-        this.Tapped -= OnSingleTap;
+        this.SizeChanged -= OnSizeChanged;
+    }
+
+    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        // Transform the existing strokes to fit the new size of the control.
+        var oldSize = e.PreviousSize;
+        var newSize = e.NewSize;
+        if (oldSize.Width > 0 && oldSize.Height > 0)
+        {
+            var scaleX = newSize.Width / oldSize.Width;
+            var scaleY = newSize.Height / oldSize.Height;
+            if (scaleX != 1 || scaleY != 1)
+            {
+                SKMatrix translation;
+                //if (scale == 1)
+                    translation = SKMatrix.CreateScale((float)scaleX, (float)scaleY);
+                //else
+                //    translation = SKMatrix.CreateScaleTranslation((float)scaleX, (float)scaleY,
+                //                                                  (float)offsetX, (float)offsetY);
+                foreach (var stroke in AvaloniaSkiaInkCanvas.StaticStrokeList)
+                    stroke.SetTransform(translation);
+            }
+        }
     }
 
     /// <summary>
@@ -99,6 +116,8 @@ public class SheetMusicControl : InkCanvas
         SaveStrokes();
     }
 
+    
+
     /// <summary>
     /// Saves the current annotations to the .svg file.
     /// </summary>
@@ -107,36 +126,6 @@ public class SheetMusicControl : InkCanvas
         var bounds = new SKRect(0, 0, (float)actualSize.Width, (float)actualSize.Height);
         var newAnnotations = Annotations.Create(bounds, AvaloniaSkiaInkCanvas.StaticStrokeList);
         page.Annotations = newAnnotations;
-    }
-
-    /// <summary>
-    /// Handles single-tap gestures.
-    /// </summary>
-    private void OnSingleTap(object sender, TappedEventArgs e)
-    {
-        // detect if the user is currently panning, and if so, ignore the tap
-        if (panTime.TotalMilliseconds < 400)
-        {
-            var scrollViewer = this.FindLogicalAncestorOfType<ScrollViewer>();
-            var zoomBorder = this.FindLogicalAncestorOfType<ZoomBorder>();
-            var viewPortHeight = zoomBorder.Bounds.Height;
-            double scrollAmount = -viewPortHeight;  // scroll full page
-            Point point = e.GetPosition(scrollViewer);
-
-            // If the tap is in the top-left corner, toggle the toolbar instead of scrolling
-            if (point.Y < 50 && point.X < Bounds.Left + 50)
-            {
-                mainView.SetToolbarVisibility(true);
-                return;
-            }
-            
-            if (point.Y < viewPortHeight / 2)
-                scrollAmount = -scrollAmount;
-
-            // Pan ZoomBorder to the tapped point
-            zoomBorder.PanDelta(0, scrollAmount);
-        }
-        e.Handled = true;
     }
 
     /// <summary>
@@ -154,6 +143,11 @@ public class SheetMusicControl : InkCanvas
         {
             double imageAspectRatio = page.Bitmap.Size.Height / page.Bitmap.Size.Width;
             width = height / imageAspectRatio;
+            if (width > availableSize.Width)
+            {
+                width = availableSize.Width;
+                height = width * imageAspectRatio;
+            }
         }
 
         // Calculate the actual size of the control based on the scale factor.
@@ -190,5 +184,6 @@ public class SheetMusicControl : InkCanvas
             context.DrawImage(page.Bitmap, new Rect(0, 0, page.Bitmap.Size.Width, page.Bitmap.Size.Height), renderRectangle);
         }
         base.Render(context);
+        AvaloniaSkiaInkCanvas.Render(context);
     }
 }

@@ -14,7 +14,7 @@
     </Design.DataContext>
     <Grid RowDefinitions="Auto,*" Background="Gray">
         <StackPanel x:Name="Toolbar" Grid.Row="0" Margin="10,0,0,0" Orientation="Horizontal" HorizontalAlignment="Left" >
-            <Button x:Name="OpenButton" Margin="10,0,0,0" Click="ToggleOpenButton_OnClick">
+            <Button x:Name="OpenButton" Margin="10,0,0,0" Click="OnOpenButtonClick">
                 <Image Source="/Assets/folder-open.png" />
             </Button>
             <Popup x:Name="FilePopup"
@@ -70,7 +70,7 @@
                     <Image Source="/Assets/eraser.png" />
                 </Panel>            
             </ToggleButton>
-            <ComboBox SelectedIndex="0" Margin="10,0,0,0" Background="Transparent" ItemsSource="{Binding SolidColorBrushCollection}" SelectionChanged="SelectingItemsControl_OnSelectionChanged">
+            <ComboBox SelectedIndex="0" Margin="10,0,0,0" Background="Transparent" ItemsSource="{Binding SolidColorBrushCollection}" SelectionChanged="OnColourSelectionChanged">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal"></StackPanel>
