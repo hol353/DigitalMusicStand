@@ -60,13 +60,14 @@ public class Annotations
     /// <param name="bounds"></param>
     /// <param name="strokes"></param>
     /// <returns></returns>
-    public static Annotations Create(SKRect bounds, IReadOnlyList<SkiaStroke> strokes)
+    public static Annotations Create(SKRect bounds, SKRect clipBounds, IReadOnlyList<SkiaStroke> strokes)
     {
         if (strokes.Any())
         {
             using var ms = new MemoryStream();
             using (var skCanvas = SKSvgCanvas.Create(bounds, ms))
             {
+                //skCanvas.ClipRect(clipBounds);
                 using var skPaint = new SKPaint();
                 skPaint.IsAntialias = true;
                 skPaint.Style = SKPaintStyle.Fill;

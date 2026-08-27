@@ -4,15 +4,10 @@ using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.PanAndZoom;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Skia;
 using DotNetCampus.Inking;
-using DotNetCampus.Inking.Erasing;
-using MuPDFCore;
-using SkiaSharp;
 
 namespace BlackFolder;
 
@@ -21,11 +16,8 @@ namespace BlackFolder;
 /// </summary>
 public partial class MainView : UserControl
 {
-    /// <summary>The time when the user started panning. Used to determine if a tap is a pan or a single tap.</summary>
-    private DateTime panStartTime = DateTime.MinValue;
-
-    /// <summary>The time the user spent panning. Used to determine if a tap is a pan or a single tap.</summary>
-    private TimeSpan panTime;
+    /// <summary>The PDF canvas control.</summary>
+    private PDFCanvas pdfCanvas;
 
     /// <summary>
     /// Constructor
@@ -40,14 +32,8 @@ public partial class MainView : UserControl
     /// </summary>
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
-        zoomBorder.ResizeBehavior = ResizeBehaviorMode.ReapplyStretch;
-        
-        zoomBorder.SizeChanged += OnZoomBorderSizeChanged;
-        zoomBorder.PanStarted += OnPanStarted;
-        zoomBorder.PanEnded += OnPanEnded;
-        zoomBorder.ZoomDeltaChanged += (s, e) => OnZoomStarted(null, null);
-        this.Tapped += OnSingleTap;
+        pdfCanvas = this.FindControl<PDFCanvas>("PDFCanvas");
+        pdfCanvas.CentreTap += (sender, args) => SetToolbarVisibility(true);
         base.OnAttachedToVisualTree(e);
     }
 
@@ -56,95 +42,7 @@ public partial class MainView : UserControl
     /// </summary>
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
-        zoomBorder.SizeChanged -= OnZoomBorderSizeChanged;
-        zoomBorder.PanStarted -= OnPanStarted;
-        zoomBorder.PanEnded -= OnPanEnded;
-        this.Tapped -= OnSingleTap;
         base.OnDetachedFromVisualTree(e);
-    }
-
-    /// <summary>
-    /// Invoked when the size of the ZoomBorder changes. Resizes all child controls to fit the new size.
-    /// </summary>
-    private void OnZoomBorderSizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        ResizeChildren(e.NewSize);
-    }
-
-    /// <summary>
-    /// Invoked when the user starts panning. Sets the min and max offsets for the ZoomBorder based on the current zoom level and the height of the music canvas.
-    /// </summary>
-    private void OnPanStarted(object sender, PanEventArgs e)
-    {
-        panStartTime = DateTime.Now;
-        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
-        if (Math.Round(zoomBorder.ZoomX, 2) == 1 && Math.Round(zoomBorder.ZoomY, 2) == 1)  // no zoom applied
-            PanInYDirectionOnly();
-    }
-
-
-    private void OnPanEnded(object sender, PanEventArgs e)
-    {
-        panTime = DateTime.Now - panStartTime;
-    }
-
-    /// <summary>
-    /// Invoked when the user starts zooming. Sets the min and max offsets for the ZoomBorder based on the current zoom level.
-    /// </summary>
-    private void OnZoomStarted(object sender, ZoomEventArgs e)
-    {
-        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
-        if (Math.Round(zoomBorder.ZoomX, 2) > 1 || Math.Round(zoomBorder.ZoomY, 2) > 1)
-        {
-            zoomBorder.MinOffsetX = -Bounds.Width;
-            zoomBorder.MaxOffsetX = Bounds.Width;
-            zoomBorder.MinOffsetY = -Bounds.Height;
-            zoomBorder.MaxOffsetY = Bounds.Height;
-        }
-    }    
-
-    /// <summary>
-    /// Resizes all child controls to fit the new size of the ZoomBorder.
-    /// </summary>
-    private void ResizeChildren(Avalonia.Size newSize)
-    {
-        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
-        zoomBorder.Zoom(1.0, Bounds.Width / 2, Bounds.Height / 2);
-        foreach (SheetMusicControl sheetMusicControl in MusicCanvas.Children)
-        {
-            sheetMusicControl.Width = newSize.Width;
-            sheetMusicControl.Height = newSize.Height;
-        }
-    }
-
-    /// <summary>
-    /// Handles single-tap gestures.
-    /// </summary>
-    private void OnSingleTap(object sender, TappedEventArgs e)
-    {
-        // detect if the user is currently panning, and if so, ignore the tap
-        if (panTime.TotalMilliseconds < 400)
-        {
-            var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
-            var viewPortHeight = zoomBorder.Bounds.Height;
-            double scrollAmount = -viewPortHeight;  // scroll full page
-            Point point = e.GetPosition(zoomBorder);
-
-            // If the tap is in the center, toggle the toolbar instead of scrolling
-            if (point.Y > viewPortHeight / 3 && point.Y < 2 * viewPortHeight / 3)
-            {
-                SetToolbarVisibility(true);
-                return;
-            }
-            
-            if (point.Y < viewPortHeight / 2)
-                scrollAmount = -scrollAmount;
-
-            // Pan ZoomBorder to the tapped point
-            zoomBorder.PanDelta(0, scrollAmount);
-        }
-        e.Handled = true;
     }
 
     /// <summary>
@@ -153,9 +51,9 @@ public partial class MainView : UserControl
     private void PenModeButton_OnClick(object sender, RoutedEventArgs e)
     {
         if (PenModeButton.IsChecked == true)
-            SetInkCanvasEditingMode(InkCanvasEditingMode.Ink);
+            pdfCanvas.AnnotateMode = InkCanvasEditingMode.Ink;
         else
-            SetInkCanvasEditingMode(InkCanvasEditingMode.None);
+            pdfCanvas.AnnotateMode = InkCanvasEditingMode.None;
         EraserModeButton.IsChecked = false;
     }
 
@@ -165,9 +63,9 @@ public partial class MainView : UserControl
     private void EraserModeButton_OnClick(object sender, RoutedEventArgs e)
     {
         if (EraserModeButton.IsChecked == true)
-            SetInkCanvasEditingMode(InkCanvasEditingMode.EraseByPoint);
+            pdfCanvas.AnnotateMode = InkCanvasEditingMode.EraseByPoint;
         else
-            SetInkCanvasEditingMode(InkCanvasEditingMode.None);
+            pdfCanvas.AnnotateMode = InkCanvasEditingMode.None;
 
         PenModeButton.IsChecked = false;
     }
@@ -192,7 +90,6 @@ public partial class MainView : UserControl
             foreach (Button button in NavigationButtons.Children)
                 button.Click -= OnNavigationButtonClicked;
         }
-        SetInkCanvasEditingMode(InkCanvasEditingMode.None);
     }
 
     /// <summary>
@@ -239,64 +136,25 @@ public partial class MainView : UserControl
         var listBox = (ListBox)sender!;
         if (listBox.SelectedItem != null)
         {
+            OnOpenButtonClick(null, null);
+            SetToolbarVisibility(false);
+
             var relativePdfFilePath = listBox.SelectedItem.ToString();
 
             var relativeDirectory = model.MusicLibrary.SelectedDirectory;
             var absoluteDirectory = relativeDirectory.ToAbsolute(model.Settings.MusicLibraryBaseDirectory);
 
-            MusicCanvas.Children.Clear();
-
             // The file can be either .pdf or .txt (setlist).
             var absolutePdfFilePath = Path.Combine(absoluteDirectory, relativePdfFilePath) + ".pdf";
             if (File.Exists(absolutePdfFilePath))
-                Load(absolutePdfFilePath);
+                pdfCanvas.Load(model.MusicLibrary, [absolutePdfFilePath]);
             else 
             {
+                // Handle .txt file case
                 var absoluteTxtFilePath = Path.Combine(absoluteDirectory, relativePdfFilePath) + ".txt";
                 if (File.Exists(absoluteTxtFilePath))
-                {
-                    // Handle .txt file case
-                    string[] fileNames = File.ReadAllLines(absoluteTxtFilePath);
-                    foreach (var fileName in fileNames)
-                    {
-                        if (File.Exists(fileName))
-                        {
-                            Load(fileName);
-                        }
-                    }
-                }
+                    pdfCanvas.Load(model.MusicLibrary, File.ReadAllLines(absoluteTxtFilePath));
             }
-            OnOpenButtonClick(null, null);
-            SetToolbarVisibility(false);
-        }
-    }
-      
-    /// <summary>
-    /// Load a pdf file.
-    /// </summary>
-    /// <param name="pdfFilePath">The path of the pdf file.</param>
-    public void Load(string pdfFilePath)
-    {
-        var model = DataContext as MainViewModel;
-        model.PdfFilePath = pdfFilePath;
-
-        try
-        {
-            model.MusicLibrary.Open(pdfFilePath);
-            foreach (var file in model.MusicLibrary.OpenFiles)
-            {
-                foreach (var page in file.Pages)
-                {
-                    var sheetMusicControl = new SheetMusicControl(this, page);
-                    sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
-                    sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
-                    MusicCanvas.Children.Add(sheetMusicControl);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error rendering PDF: {ex.Message}");
         }
     }
 
@@ -315,63 +173,9 @@ public partial class MainView : UserControl
     private void OnColourSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (e.AddedItems.Count is 1)
-        {
             if (e.AddedItems[0] is ISolidColorBrush brush)
-            {
-                SetInkCanvasInkColour(brush.Color.ToSKColor());
-            }
-        }
+                pdfCanvas.SetAnnotateColour(brush.Color.ToSKColor());
     }
-
-    /// <summary>
-    /// Sets the editing mode
-    /// </summary>
-    /// <param name="mode">Draw vs erase.</param>
-    private void SetInkCanvasEditingMode(InkCanvasEditingMode mode)
-    {
-        foreach (InkCanvas inkCanvas in MusicCanvas.Children)
-            inkCanvas.EditingMode = mode;
-
-        if (mode == InkCanvasEditingMode.None && MusicCanvas.Children.Count > 0)
-        {
-            PanInYDirectionOnly();
-            SetToolbarVisibility(false);
-            ResizeChildren(new Avalonia.Size(Bounds.Width, Bounds.Height));
-            InvalidateVisual();
-        }
-        else
-        {
-            // Turn panning off when in drawing or erasing mode, so that the user can draw/erase without panning the page.
-            var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1");
-            zoomBorder.MinOffsetX = zoomBorder.OffsetX;
-            zoomBorder.MaxOffsetX = zoomBorder.OffsetX;
-            zoomBorder.MinOffsetY = zoomBorder.OffsetY;
-            zoomBorder.MaxOffsetY = zoomBorder.OffsetY; 
-        }
-    }
-
-    /// <summary>
-    /// Sets the editing colour
-    /// </summary>
-    /// <param name="colour">The ink colour</param>
-    private void SetInkCanvasInkColour(SKColor colour)
-    {
-        foreach (InkCanvas inkCanvas in MusicCanvas.Children)
-            inkCanvas.AvaloniaSkiaInkCanvas.Settings.InkColor = colour;
-    }
-
-    /// <summary>
-    /// Allows panning in the Y direction only.
-    /// </summary>
-    private void PanInYDirectionOnly()
-    {
-        var zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder1"); 
-        double maximumHeight = (MusicCanvas.Children.Count-1) * Bounds.Height;       
-        zoomBorder.MinOffsetX = 0;
-        zoomBorder.MaxOffsetX = 0;
-        zoomBorder.MinOffsetY = -maximumHeight;
-        zoomBorder.MaxOffsetY = 0;
-    }    
 
     /// <summary>
     /// Application is about to close. Save annotations.
@@ -382,5 +186,4 @@ public partial class MainView : UserControl
         model.MusicLibrary.CloseAll();
         model.Settings.Save(model.BaseDirectory);
     }
-   
 }

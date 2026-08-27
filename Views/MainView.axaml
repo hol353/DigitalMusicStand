@@ -6,6 +6,7 @@
              xmlns:inking="using:DotNetCampus.Inking"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="BlackFolder.MainView"
+             xmlns:local="clr-namespace:BlackFolder"
              x:DataType="vm:MainViewModel">
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -83,21 +84,6 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
         </StackPanel>
-            <ZoomBorder x:Name="ZoomBorder1" Grid.Row="1" 
-                            Stretch="None"
-                            PanButton="Left"
-                            ZoomSpeed="1.1"
-                            MinZoomX="1.0"
-                            MaxZoomX="2.0"
-                            MinZoomY="1.0"
-                            MaxZoomY="2.0"
-                            EnableConstrains="True"
-                            EnableGestureRotation="False"
-                            Background="SlateBlue" ClipToBounds="True" Focusable="True"
-                            VerticalAlignment="Stretch" >
-                <StackPanel x:Name="MusicCanvas"> 
-                </StackPanel>
-            </ZoomBorder>
-
+        <local:PDFCanvas x:Name="PDFCanvas"  Grid.Row="1" /> 
     </Grid>
 </UserControl>

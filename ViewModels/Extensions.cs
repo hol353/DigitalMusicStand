@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using Avalonia;
+using SkiaSharp;
 
 namespace BlackFolder;
 
@@ -27,5 +29,19 @@ public static class Extensions
     public static string ToAbsolute(this string path, string basePath)
     {
         return Path.Combine(basePath, path);
+    }    
+
+    /// <summary>
+    /// Converts an Avalonia Rect to a SkiaSharp SKRect.
+    /// </summary>
+    /// <param name="rect">The Avalonia Rect to convert.</param>
+    /// <returns>The SkiaSharp SKRect.</returns>
+    public static SKRect ToSKRect(this Rect rect)
+    {
+        return new SKRect(
+            (float)rect.X,
+            (float)rect.Y,
+            (float)rect.Right,
+            (float)rect.Bottom);
     }    
 }
