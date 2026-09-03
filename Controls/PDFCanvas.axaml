@@ -1,6 +1,8 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="BlackFolder.PDFCanvas">
+             x:Class="BlackFolder.PDFCanvas"
+             xmlns:vm="using:BlackFolder"
+             x:DataType="vm:MainViewModel">
     <ZoomBorder x:Name="ZoomBorder"
                 Stretch="None"
                 PanButton="Left"
@@ -11,9 +13,9 @@
                 MaxZoomY="2.0"
                 EnableConstrains="True"
                 EnableGestureRotation="False"
-                Background="SlateBlue" ClipToBounds="True" Focusable="True"
-                VerticalAlignment="Stretch" >
-        <StackPanel x:Name="MusicCanvas">
+                Background="White" ClipToBounds="True" Focusable="True"
+                VerticalAlignment="Stretch">
+        <StackPanel x:Name="MusicCanvas" Background="White">
              
         </StackPanel>
     </ZoomBorder>

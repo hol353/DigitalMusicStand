@@ -7,8 +7,6 @@ namespace BlackFolder;
 
 public class MusicLibrary
 {
-    private string selectedDirectory;
-
     private MainViewModel model;
 
     /// <summary>
@@ -31,14 +29,6 @@ public class MusicLibrary
     /// </summary>
     public ObservableCollection<string> RelativeFileNames { get; set; } = new();
 
-    /// <summary>
-    /// The currently selected directory (relative to BasePath).
-    /// </summary>
-    public string SelectedDirectory 
-    { 
-        get => selectedDirectory; 
-        set { selectedDirectory = value; ReadFiles(); } 
-    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MusicLibrary"/> class.
@@ -48,7 +38,6 @@ public class MusicLibrary
     {
         this.model = model;
         BasePath = model.Settings.MusicLibraryBaseDirectory;
-        SelectedDirectory = model.Settings.SelectedDirectory;
         ReadDirectories(BasePath);
         ReadFiles();
     }
@@ -81,7 +70,6 @@ public class MusicLibrary
     /// </summary>
     public void CloseAll()
     {
-        model.Settings.SelectedDirectory = SelectedDirectory;
         if (OpenFiles != null)
             foreach (var file in OpenFiles)
                 file.Save();
@@ -100,9 +88,9 @@ public class MusicLibrary
     /// <summary>
     /// Read all files in selected directory.
     /// </summary>
-    private void ReadFiles()
+    public void ReadFiles()
     {
-        var absoluteSelectedDirectory = SelectedDirectory?.ToAbsolute(BasePath);
+        var absoluteSelectedDirectory = model.Settings.SelectedDirectory?.ToAbsolute(BasePath);
         if (absoluteSelectedDirectory != null && Directory.Exists(absoluteSelectedDirectory))
         {
             RelativeFileNames.Clear();
