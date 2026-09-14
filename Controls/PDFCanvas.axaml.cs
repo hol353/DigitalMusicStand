@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.PanAndZoom;
@@ -96,9 +97,6 @@ public partial class PDFCanvas : UserControl
 
         if (mode == InkCanvasEditingMode.None && musicCanvas.Children.Count > 0)
         {
-            PanInYDirectionOnly();
-            ResizeChildren(new Size(Bounds.Width, Bounds.Height));
-            InvalidateVisual();
         }
         else
             PanOff();
@@ -125,11 +123,11 @@ public partial class PDFCanvas : UserControl
         zoomBorder = this.FindControl<ZoomBorder>("ZoomBorder");
         musicCanvas = this.FindControl<StackPanel>("MusicCanvas");
 
-        zoomBorder.ResizeBehavior = ResizeBehaviorMode.ReapplyStretch;
+        //zoomBorder.ResizeBehavior = ResizeBehaviorMode.ReapplyStretch;
         zoomBorder.SizeChanged += OnZoomBorderSizeChanged;
         zoomBorder.PanStarted += OnPanStarted;
         zoomBorder.PanEnded += OnPanEnded;
-        zoomBorder.ZoomDeltaChanged += (s, e) => OnZoomStarted(null, null);
+        //zoomBorder.ZoomDeltaChanged += (s, e) => OnZoomStarted(null, null);
         this.Tapped += OnSingleTap;
     }
 
@@ -163,9 +161,12 @@ public partial class PDFCanvas : UserControl
                     var sheetMusicControl = new PDFPageCanvas(this, page);
                     sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
                     sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
+                    sheetMusicControl.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+                    sheetMusicControl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top;
                     musicCanvas.Children.Add(sheetMusicControl);
                 }
             }
+            SetAnnotateMode(model.IsPenMode ? InkCanvasEditingMode.Ink : InkCanvasEditingMode.None);
         }
         catch (Exception ex)
         {
@@ -186,12 +187,16 @@ public partial class PDFCanvas : UserControl
     /// </summary>
     private void ResizeChildren(Avalonia.Size newSize)
     {
-        zoomBorder.Zoom(1.0, Bounds.Width / 2, Bounds.Height / 2);
-        foreach (PDFPageCanvas sheetMusicControl in musicCanvas.Children)
+        //zoomBorder.Zoom(1.0, Bounds.Width / 2, Bounds.Height / 2);
+
+        // Need to resize the children to fit the new size of the ZoomBorder. This is necessary because the 
+        // StackPanel does not always automatically resize its children when it is resized.
+        foreach (PDFPageCanvas page in musicCanvas.Children)
         {
-            sheetMusicControl.Width = newSize.Width;
-            sheetMusicControl.Height = newSize.Height;
+            page.Width = newSize.Width;
+            page.Height = newSize.Height;
         }
+        PanInYDirectionOnly(newSize.Height);
     } 
 
     /// <summary>
@@ -288,9 +293,12 @@ public partial class PDFCanvas : UserControl
     /// <summary>
     /// Allows panning in the Y direction only.
     /// </summary>
-    private void PanInYDirectionOnly()
+    private void PanInYDirectionOnly(double newHeight = 0)
     {
-        double maximumHeight = (musicCanvas.Children.Count-1) * Bounds.Height;       
+        if (newHeight == 0)
+            newHeight = Bounds.Height;
+
+        double maximumHeight = (musicCanvas.Children.Count-1) * (newHeight + musicCanvas.Spacing);
         zoomBorder.MinOffsetX = 0;
         zoomBorder.MaxOffsetX = 0;
         zoomBorder.MinOffsetY = -maximumHeight;

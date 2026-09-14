@@ -9,7 +9,7 @@ namespace BlackFolder;
 
 public class MusicPage
 {
-    private int pageNumber;
+    public int pageNumber;
     private MainViewModel model;
     private string fileName;
     

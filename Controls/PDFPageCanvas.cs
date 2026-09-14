@@ -32,6 +32,7 @@ public class PDFPageCanvas : InkCanvas
 
     /// <summary>The size of the viewport in pixels.</summary>
     private SKRect viewPortSize;
+    private ZoomBorder zoomBorder;
 
     /// <summary>
     /// Constructor.
@@ -60,6 +61,8 @@ public class PDFPageCanvas : InkCanvas
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        zoomBorder = this.FindLogicalAncestorOfType<ZoomBorder>();
+
         this.StrokeCollected += OnStrokeCollected;
         this.StrokeErased += OnStrokeErased;
         this.SizeChanged += OnSizeChanged;
@@ -161,9 +164,10 @@ public class PDFPageCanvas : InkCanvas
     protected override Size MeasureCore(Size availableSize)
     {
         bitmapRenderRectangle = CalculateRenderRectangle(availableSize.Width, availableSize.Height);
+        var size = new Size(availableSize.Width, bitmapRenderRectangle.Height);
 
-        base.MeasureCore(bitmapRenderRectangle.Size);
-        return bitmapRenderRectangle.Size;
+        base.MeasureCore(size);
+        return size;
     }
 
     private Rect CalculateRenderRectangle(double availableWidth, double availableHeight)
@@ -172,7 +176,6 @@ public class PDFPageCanvas : InkCanvas
         var height = availableHeight;
         if (double.IsInfinity(height))
         {
-            var zoomBorder = this.FindLogicalAncestorOfType<ZoomBorder>();
             height = zoomBorder.Bounds.Height;
         }
         if (page.Bitmap != null)
@@ -198,7 +201,8 @@ public class PDFPageCanvas : InkCanvas
     protected override Size ArrangeOverride(Size finalSize)
     {
         viewPortSize = new SKRect(0, 0, (float)finalSize.Width, (float)finalSize.Height);
-        return base.ArrangeOverride(finalSize); // finalSize;
+        //return base.ArrangeOverride(finalSize);
+        return finalSize;
     }
 
     /// <summary>
@@ -209,11 +213,13 @@ public class PDFPageCanvas : InkCanvas
     {
         if (page.Bitmap != null)
         {
-            var pen = new Pen(Brushes.Red, 2);
-            context.DrawRectangle(Brushes.White, pen, bitmapRenderRectangle);
+            //Pen bitmapPen;
+            //context.DrawRectangle(bitmapPen, bitmapRenderRectangle);
+
+            context.DrawRectangle(Brushes.White, null, bitmapRenderRectangle);
             context.DrawImage(page.Bitmap, new Rect(0, 0, page.Bitmap.Size.Width, page.Bitmap.Size.Height), bitmapRenderRectangle);
         }
-        base.Render(context);
-        AvaloniaSkiaInkCanvas.Render(context);
+        //base.Render(context);
+        //AvaloniaSkiaInkCanvas.Render(context);
     }
 }

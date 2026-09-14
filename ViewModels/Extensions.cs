@@ -44,4 +44,20 @@ public static class Extensions
             (float)rect.Right,
             (float)rect.Bottom);
     }    
+
+
+    /// <summary>
+    /// Converts an Avalonia Rect to a SkiaSharp SKRect.
+    /// </summary>
+    /// <param name="rect">The Avalonia Rect to convert.</param>
+    /// <returns>The SkiaSharp SKRect.</returns>
+    public static Rect ToRect(this SKRect rect)
+    {
+        return new Rect(
+            rect.Left,
+            rect.Top,
+            rect.Width,
+            rect.Height);
+    }      
 }
+ 

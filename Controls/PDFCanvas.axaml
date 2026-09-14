@@ -13,9 +13,12 @@
                 MaxZoomY="2.0"
                 EnableConstrains="True"
                 EnableGestureRotation="False"
-                Background="White" ClipToBounds="True" Focusable="True"
+                Background="Black" ClipToBounds="True" Focusable="True"
                 VerticalAlignment="Stretch">
-        <StackPanel x:Name="MusicCanvas" Background="White">
+        <StackPanel x:Name="MusicCanvas" 
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Spacing="10">
              
         </StackPanel>
     </ZoomBorder>

@@ -40,7 +40,7 @@
                     Foreground="Black"
                     Background="Transparent" />            
             </ToggleButton>
-            <ComboBox SelectedIndex="0" ItemsSource="{Binding SolidColorBrushCollection}" SelectedItem="{Binding SelectedBrush}">
+            <ComboBox Foreground="Black" Background="LightGray" SelectedIndex="0" ItemsSource="{Binding SolidColorBrushCollection}" SelectedItem="{Binding SelectedBrush}">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal"></StackPanel>

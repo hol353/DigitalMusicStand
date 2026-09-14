@@ -8,33 +8,33 @@
     <DockPanel >
         <ComboBox x:Name="ComboBox" Foreground="Black" Background="LightGray" HorizontalAlignment="Stretch" DockPanel.Dock="Top" ItemsSource="{Binding MusicLibrary.Directories}" SelectedItem="{Binding SelectedDirectory}" />
             <StackPanel x:Name="NavigationButtons" Background="LightGray" DockPanel.Dock="Right">
-                <Button Width="30" Click="OnNavigationButtonClicked">#</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">A</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">B</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">C</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">D</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">E</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">F</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">G</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">H</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">I</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">J</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">K</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">L</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">M</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">N</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">O</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">P</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">Q</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">R</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">S</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">T</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">U</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">V</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">W</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">X</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">Y</Button>
-                <Button Width="30" Click="OnNavigationButtonClicked">Z</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">#</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">A</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">B</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">C</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">D</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">E</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">F</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">G</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">H</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">I</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">J</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">K</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">L</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">M</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">N</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">O</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">P</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">Q</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">R</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">S</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">T</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">U</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">V</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">W</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">X</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">Y</Button>
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">Z</Button>
             </StackPanel>   
             <ListBox x:Name="ListBox" Foreground="Black" Background="LightGray" ItemsSource="{Binding MusicLibrary.RelativeFileNames}" SelectedItem="{Binding SelectedFile}" />
         </DockPanel>
