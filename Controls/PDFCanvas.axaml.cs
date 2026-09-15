@@ -130,7 +130,7 @@ public partial class PDFCanvas : UserControl
         //zoomBorder.ZoomDeltaChanged += (s, e) => OnZoomStarted(null, null);
         this.Tapped += OnSingleTap;
     }
-
+ 
     /// <summary>
     /// Invoked when the control is detached from the visual tree.
     /// </summary>
@@ -160,7 +160,6 @@ public partial class PDFCanvas : UserControl
                 {
                     var sheetMusicControl = new PDFPageCanvas(this, page);
                     sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.EraserViewCreator = new DelegateEraserViewCreator(() => new CustomEraserView());
-                    sheetMusicControl.AvaloniaSkiaInkCanvas.Settings.InkThickness = 2;
                     sheetMusicControl.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
                     sheetMusicControl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top;
                     musicCanvas.Children.Add(sheetMusicControl);
@@ -240,8 +239,7 @@ public partial class PDFCanvas : UserControl
         // detect if the user is currently panning, and if so, ignore the tap
         if (panTime.TotalMilliseconds < 400)
         {
-            var viewPortHeight = zoomBorder.Bounds.Height;
-            double scrollAmount = -viewPortHeight;  // scroll full page
+            var viewPortHeight = zoomBorder.Bounds.Height + musicCanvas.Spacing;
             Point point = e.GetPosition(zoomBorder);
 
             // If the tap is in the center, toggle the toolbar instead of scrolling
@@ -250,12 +248,28 @@ public partial class PDFCanvas : UserControl
                 OnCentreTap();
                 return;
             }
-            
-            if (point.Y < viewPortHeight / 2)
-                scrollAmount = -scrollAmount;
 
-            // Pan ZoomBorder to the tapped point
-            zoomBorder.PanDelta(0, scrollAmount);
+            // Get the y pixel position of the page at the top of the viewport.
+            var yPositionTopViewPort = -zoomBorder.OffsetY;
+
+            // Find page that is at the top of the viewport
+            var topPage = musicCanvas.Children.OfType<PDFPageCanvas>().FirstOrDefault(page => page.ContainsYPoint(yPositionTopViewPort));
+            int topPageIndex = musicCanvas.Children.IndexOf(topPage);
+
+            int nextPageIndex;
+            if (point.Y < viewPortHeight / 2)
+                nextPageIndex = topPageIndex - 1;   // go to previous page
+            else
+                nextPageIndex = topPageIndex + 1;   // go to next page
+
+            if (nextPageIndex >= 0 && nextPageIndex < musicCanvas.Children.Count)
+            {
+                double scrollAmount = -musicCanvas.Children[nextPageIndex].Bounds.Top;
+
+                // Pan ZoomBorder to the tapped point
+                double deltaPan = scrollAmount - zoomBorder.OffsetY;
+                zoomBorder.PanDelta(0, deltaPan);
+            }
         }
         e.Handled = true;
     }
@@ -277,6 +291,8 @@ public partial class PDFCanvas : UserControl
         zoomBorder.MaxOffsetX = Bounds.Width;
         zoomBorder.MinOffsetY = -Bounds.Height;
         zoomBorder.MaxOffsetY = Bounds.Height;
+        zoomBorder.EnablePan = true;
+        zoomBorder.EnableGestureTranslation = true;
     }
 
     /// <summary>
@@ -284,6 +300,8 @@ public partial class PDFCanvas : UserControl
     /// </summary>
     private void PanOff()
     {
+        zoomBorder.EnablePan = false;
+        zoomBorder.EnableGestureTranslation = false;
         zoomBorder.MinOffsetX = zoomBorder.OffsetX;
         zoomBorder.MaxOffsetX = zoomBorder.OffsetX;
         zoomBorder.MinOffsetY = zoomBorder.OffsetY;
@@ -295,13 +313,19 @@ public partial class PDFCanvas : UserControl
     /// </summary>
     private void PanInYDirectionOnly(double newHeight = 0)
     {
-        if (newHeight == 0)
-            newHeight = Bounds.Height;
+        if (musicCanvas.Children.Count > 0)
+        {
+            if (newHeight == 0)
+                newHeight = Bounds.Height;
 
-        double maximumHeight = (musicCanvas.Children.Count-1) * (newHeight + musicCanvas.Spacing);
-        zoomBorder.MinOffsetX = 0;
-        zoomBorder.MaxOffsetX = 0;
-        zoomBorder.MinOffsetY = -maximumHeight;
-        zoomBorder.MaxOffsetY = 0;
+            double maximumHeight = (musicCanvas.Children.Count-1) * (newHeight + musicCanvas.Spacing);
+            zoomBorder.MinOffsetX = -Bounds.Width;
+            zoomBorder.MaxOffsetX = 0;
+            zoomBorder.MinOffsetY = -maximumHeight;
+            zoomBorder.MaxOffsetY = 0;
+
+            zoomBorder.EnablePan = true;
+            zoomBorder.EnableGestureTranslation = true;
+        }
     }      
 }

@@ -58,7 +58,7 @@ public class MusicFile
             for (int page = 0; page < document.Pages.Length; page++)
             {
                 using var memoryStream = new MemoryStream();
-                document.WriteImage(page, 1.5, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
+                document.WriteImage(page, 1.7, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
                 memoryStream.Seek(0, SeekOrigin.Begin);
                 Pages.Add(new MusicPage(model, pdfFilePath, new Bitmap(memoryStream), page + 1));
             }

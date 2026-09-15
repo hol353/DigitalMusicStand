@@ -56,6 +56,16 @@ public class PDFPageCanvas : InkCanvas
     }
 
     /// <summary>
+    /// Determines if the given y point is within the bounds of the bitmap render rectangle.
+    /// </summary>
+    /// <param name="ypoint"></param>
+    /// <returns></returns>
+    public bool ContainsYPoint(double ypoint)
+    {
+        return ypoint >= Bounds.Top && ypoint < Bounds.Top + bitmapRenderRectangle.Height;
+    }
+
+    /// <summary>
     /// Called when the control is attached to the visual tree.
     /// </summary>
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
