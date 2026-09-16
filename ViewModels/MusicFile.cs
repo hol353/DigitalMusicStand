@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Avalonia;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using MuPDFCore;
 
 namespace BlackFolder;
@@ -57,10 +59,20 @@ public class MusicFile
             // Convert each page of the PDf to a MusicPage instance.
             for (int page = 0; page < document.Pages.Length; page++)
             {
-                using var memoryStream = new MemoryStream();
-                document.WriteImage(page, 1.7, PixelFormats.RGBA, memoryStream, RasterOutputFileTypes.PNG, false);
-                memoryStream.Seek(0, SeekOrigin.Begin);
-                Pages.Add(new MusicPage(model, pdfFilePath, new Bitmap(memoryStream), page + 1));
+                var pageBounds = document.Pages[page].Bounds;
+                var pixelSize = new PixelSize(
+                    (int)Math.Ceiling(pageBounds.Width * 1.7),
+                    (int)Math.Ceiling(pageBounds.Height * 1.7));
+                var bitmap = new WriteableBitmap(
+                    pixelSize,
+                    new Vector(96, 96),
+                    Avalonia.Platform.PixelFormats.Rgba8888,
+                    AlphaFormat.Unpremul);
+
+                using (var framebuffer = bitmap.Lock())
+                    document.Render(page, 1.7, MuPDFCore.PixelFormats.RGBA, framebuffer.Address, false);
+
+                Pages.Add(new MusicPage(model, pdfFilePath, bitmap, page + 1));
             }
         }
     }    
