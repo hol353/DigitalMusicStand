@@ -48,8 +48,9 @@ public partial class PDFCanvas : UserControl
         base.OnLoaded(e);
         model = DataContext as MainViewModel;
         model.WhenAnyValue(x => x.SelectedFile).Subscribe(file => LoadFile(file));
-        model.WhenAnyValue(x => x.IsPenMode).Subscribe(isPenMode => SetAnnotateMode(isPenMode ? InkCanvasEditingMode.Ink : InkCanvasEditingMode.None));
-        model.WhenAnyValue(x => x.IsEraserMode).Subscribe(isEraserMode => SetAnnotateMode(isEraserMode ? InkCanvasEditingMode.EraseByPoint : InkCanvasEditingMode.None));
+        model.WhenAnyValue(x => x.IsPenMode).Subscribe(_ => UpdateAnnotateMode());
+        model.WhenAnyValue(x => x.IsEraserMode).Subscribe(_ => UpdateAnnotateMode());
+        model.WhenAnyValue(x => x.IsHighlighterMode).Subscribe(_ => UpdateAnnotateMode());
         model.WhenAnyValue(x => x.SelectedBrush).Subscribe(brush => SetAnnotateBrush(brush));
     }
 
@@ -93,7 +94,10 @@ public partial class PDFCanvas : UserControl
     private void SetAnnotateMode(InkCanvasEditingMode mode)
     {
         foreach (InkCanvas inkCanvas in musicCanvas.Children)
+        {
             inkCanvas.EditingMode = mode;
+            ApplyInkSettings(inkCanvas);
+        }
 
         if (mode == InkCanvasEditingMode.None && musicCanvas.Children.Count > 0)
         {
@@ -102,15 +106,41 @@ public partial class PDFCanvas : UserControl
             PanOff();
     }
 
+    private void UpdateAnnotateMode()
+    {
+        if (model.IsHighlighterMode || model.IsPenMode)
+            SetAnnotateMode(InkCanvasEditingMode.Ink);
+        else if (model.IsEraserMode)
+            SetAnnotateMode(InkCanvasEditingMode.EraseByPoint);
+        else
+            SetAnnotateMode(InkCanvasEditingMode.None);
+    }
+
+    private void ApplyInkSettings(InkCanvas inkCanvas)
+    {
+        var settings = inkCanvas.AvaloniaSkiaInkCanvas.Settings;
+        var colour = settings.InkColor;
+        settings.InkThickness = model.IsHighlighterMode ? 24 : 10;
+        settings.InkColor = model.IsHighlighterMode
+            ? new SKColor(colour.Red, colour.Green, colour.Blue, Math.Min(colour.Alpha, (byte)110))
+            : new SKColor(colour.Red, colour.Green, colour.Blue, model.SelectedBrush.Color.A);
+    }
+
     /// <summary>
     /// Sets the annotation brush
     /// </summary>
     /// <param name="colour">The ink colour</param>
     public void SetAnnotateBrush(ISolidColorBrush solidColorBrush)
     {
-        SKColor colour = new SKColor(solidColorBrush.Color.R, solidColorBrush.Color.G, solidColorBrush.Color.B, solidColorBrush.Color.A);
-        foreach (InkCanvas inkCanvas in musicCanvas.Children)
-            inkCanvas.AvaloniaSkiaInkCanvas.Settings.InkColor = colour;
+        if (solidColorBrush != null)
+        {
+            SKColor colour = new SKColor(solidColorBrush.Color.R, solidColorBrush.Color.G, solidColorBrush.Color.B, solidColorBrush.Color.A);
+            foreach (InkCanvas inkCanvas in musicCanvas.Children)
+            {
+                inkCanvas.AvaloniaSkiaInkCanvas.Settings.InkColor = colour;
+                ApplyInkSettings(inkCanvas);
+            }
+        }
     }
 
     /// <summary>
@@ -165,7 +195,7 @@ public partial class PDFCanvas : UserControl
                     musicCanvas.Children.Add(sheetMusicControl);
                 }
             }
-            SetAnnotateMode(model.IsPenMode ? InkCanvasEditingMode.Ink : InkCanvasEditingMode.None);
+            UpdateAnnotateMode();
         }
         catch (Exception ex)
         {

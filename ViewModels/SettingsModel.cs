@@ -19,6 +19,12 @@ public class SettingsModel
     /// </summary>
     public string SelectedDirectory { get; set; }
 
+    /// <summary>The currently selected pen color index.</summary>
+    public int SelectedPenColorIndex { get; set; } = 0;
+
+    /// <summary>The currently selected highlighter color index.</summary>
+    public int SelectedHighlighterColorIndex { get; set; } = 1;
+
     /// <summary>
     /// Load the application settings from disk.
     /// </summary>

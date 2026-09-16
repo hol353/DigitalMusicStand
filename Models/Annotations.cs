@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Globalization;
 using System.Xml;
 using DotNetCampus.Inking;
 using SkiaSharp;
@@ -120,8 +121,19 @@ public class Annotations
                 string colorName = pathNode.Attributes["fill"].Value;
                 var fieldInfo = typeof(SKColors).GetFields(BindingFlags.Static | BindingFlags.Public)
                                                 .First(fieldInfo => fieldInfo.Name.ToLower() == colorName);
-                return (SKColor)fieldInfo.GetValue(null);
+                var color = (SKColor)fieldInfo.GetValue(null);
+                var opacity = GetOpacity("opacity") * GetOpacity("fill-opacity");
+                return color.WithAlpha((byte)Math.Round(color.Alpha * opacity));
             }
+        }
+
+        private double GetOpacity(string attributeName)
+        {
+            var attribute = pathNode.Attributes[attributeName];
+            if (attribute == null || !double.TryParse(attribute.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var opacity))
+                return 1;
+
+            return Math.Clamp(opacity, 0, 1);
         }
 
         public SKPath Path

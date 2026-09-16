@@ -22,6 +22,9 @@ public class MainViewModel : ReactiveObject
     /// <summary>Is the app in eraser mode?</summary>
     private bool _isEraserMode;
 
+    /// <summary>Is the app in highlighter mode?</summary>
+    private bool _isHighlighterMode;
+
     /// <summary>Is file select mode enabled?</summary>    
     private bool _isFileSelectMode;
 
@@ -79,6 +82,7 @@ public class MainViewModel : ReactiveObject
             {
                 IsPenMode = false;
                 IsEraserMode = false;
+                IsHighlighterMode = false;
                 IsFileSelectMode = false;
             }
         }
@@ -92,12 +96,16 @@ public class MainViewModel : ReactiveObject
         get => _isPenMode;
         set
         {
-            this.RaiseAndSetIfChanged(ref _isPenMode, value);
-            if (IsPenMode)
+            if (value)
             {
                 IsEraserMode = false;
+                IsHighlighterMode = false;
                 IsFileSelectMode = false;
+                SelectedBrush = SolidColorBrushCollection[Settings.SelectedPenColorIndex];
             }
+            else if (value != _isPenMode)
+                Settings.SelectedPenColorIndex = SolidColorBrushCollection.IndexOf(SelectedBrush);
+            this.RaiseAndSetIfChanged(ref _isPenMode, value);
         }
     }
 
@@ -109,12 +117,34 @@ public class MainViewModel : ReactiveObject
         get => _isEraserMode;
         set
         {
-            this.RaiseAndSetIfChanged(ref _isEraserMode, value);
-            if (IsEraserMode)
+            if (value)
             {
                 IsPenMode = false;
+                IsHighlighterMode = false;
                 IsFileSelectMode = false;
             }
+            this.RaiseAndSetIfChanged(ref _isEraserMode, value);
+        }
+    }
+
+    /// <summary>
+    /// Is highlighter mode enabled?
+    /// </summary>
+    public bool IsHighlighterMode
+    {
+        get => _isHighlighterMode;
+        set
+        {
+            if (value)
+            {
+                IsPenMode = false;
+                IsEraserMode = false;
+                IsFileSelectMode = false;
+                SelectedBrush = SolidColorBrushCollection[Settings.SelectedHighlighterColorIndex];
+            }
+            else if (value != _isHighlighterMode)
+                Settings.SelectedHighlighterColorIndex = SolidColorBrushCollection.IndexOf(SelectedBrush);
+            this.RaiseAndSetIfChanged(ref _isHighlighterMode, value);
         }
     }
 
@@ -132,6 +162,7 @@ public class MainViewModel : ReactiveObject
             {
                 IsPenMode = false;
                 IsEraserMode = false;
+                IsHighlighterMode = false;
             }
         }
     }
@@ -171,7 +202,7 @@ public class MainViewModel : ReactiveObject
     /// <summary>
     /// Collection of colour brushes/
     /// </summary>
-    public ObservableCollection<IBrush> SolidColorBrushCollection { get; }
+    public ObservableCollection<ISolidColorBrush> SolidColorBrushCollection { get; }
 
     /// <summary>
     /// The currently selected colour.
