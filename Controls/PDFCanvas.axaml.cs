@@ -195,6 +195,8 @@ public partial class PDFCanvas : UserControl
                     musicCanvas.Children.Add(sheetMusicControl);
                 }
             }
+            // Pan back to the origin instead.
+            zoomBorder.PanDelta(0, -zoomBorder.OffsetY);
             UpdateAnnotateMode();
         }
         catch (Exception ex)

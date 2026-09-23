@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=BlackFolder
+Comment=Black Folder.
+Icon=/home/dean/Repos/DigitalMusicStand/Assets/BlackFolder.svg
+Exec=/home/dean/dotnet/dotnet /home/dean/Repos/DigitalMusicStand/bin/Debug/net9.0/BlackFolder.dll
+Terminal=false
+
+
