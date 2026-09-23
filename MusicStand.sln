@@ -5,12 +5,6 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicStand", "MusicStand.csproj", "{241C853F-7848-0332-ACCD-EBF34DA8AE85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetCampus.AvaloniaInkCanvas", "..\DotNetCampus.InkCanvas\src\DotNetCampus.AvaloniaInkCanvas\DotNetCampus.AvaloniaInkCanvas.csproj", "{9041C7A0-DF48-4F8F-B897-F56BC991D8D1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetCampus.InkCanvas.InkCore", "..\DotNetCampus.InkCanvas\src\DotNetCampus.InkCanvas.InkCore\DotNetCampus.InkCanvas.InkCore.csproj", "{0F18A531-F79C-4670-AF80-DD17F4027FE7}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetCampus.InkCanvas.SkiaInk", "..\DotNetCampus.InkCanvas\src\DotNetCampus.InkCanvas.SkiaInk\DotNetCampus.InkCanvas.SkiaInk.csproj", "{69121DDC-B4E8-45FE-9A62-F6526062E20D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

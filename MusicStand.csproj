@@ -23,12 +23,7 @@
     <PackageReference Include="Avalonia.Diagnostics" Version="11.3.20" />
     <PackageReference Include="MuPDFCore" Version="2.0.1" />
     <PackageReference Include="PanAndZoom" Version="12.1.1" />
+    <PackageReference Include="DotNetCampus.AvaloniaInkCanvas" Version="2.0.0" />
     <!--<PackageReference Include="DotNetCampus.AvaloniaInkCanvas" Version="1.0.1" /> -->
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="../DotNetCampus.InkCanvas/src/DotNetCampus.AvaloniaInkCanvas/DotNetCampus.AvaloniaInkCanvas.csproj" />
-    <ProjectReference Include="../DotNetCampus.InkCanvas/src/DotNetCampus.InkCanvas.InkCore/DotNetCampus.InkCanvas.InkCore.csproj" />
-    <ProjectReference Include="../DotNetCampus.InkCanvas/src/DotNetCampus.InkCanvas.SkiaInk/DotNetCampus.InkCanvas.SkiaInk.csproj" />
   </ItemGroup>
 </Project>
