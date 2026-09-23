@@ -6,7 +6,6 @@
     <LangVersion>latest</LangVersion>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>BlackFolder.ico</ApplicationIcon>
     
   </PropertyGroup>
 

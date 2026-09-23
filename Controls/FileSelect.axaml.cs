@@ -4,7 +4,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 /// <summary>
 /// Represents the main view of the application.

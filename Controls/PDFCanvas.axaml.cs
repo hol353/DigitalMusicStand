@@ -15,7 +15,7 @@ using DotNetCampus.Inking.Erasing;
 using ReactiveUI;
 using SkiaSharp;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 /// <summary>
 /// Represents the main view of the application.

@@ -8,7 +8,7 @@ using System.Xml;
 using DotNetCampus.Inking;
 using SkiaSharp;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 /// <summary>
 /// Represents all annotations in an SVG file.

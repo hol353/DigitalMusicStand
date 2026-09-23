@@ -2,11 +2,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="using:BlackFolder"
+             xmlns:vm="using:MusicStand"
              xmlns:inking="using:DotNetCampus.Inking"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="BlackFolder.MainView"
-             xmlns:local="clr-namespace:BlackFolder"
+             x:Class="MusicStand.MainView"
+             xmlns:local="clr-namespace:MusicStand"
              x:DataType="vm:MainViewModel">
     <Design.DataContext>
         <vm:MainViewModel />

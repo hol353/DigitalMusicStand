@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 /// <summary>
 /// Represents the application settings.

@@ -9,7 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using ReactiveUI;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 public class MainViewModel : ReactiveObject
 {

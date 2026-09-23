@@ -1,8 +1,8 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="using:Avalonia.Data.Converters"
-             x:Class="BlackFolder.FileSelect"
-             xmlns:vm="using:BlackFolder"
+             x:Class="MusicStand.FileSelect"
+             xmlns:vm="using:MusicStand"
              x:DataType="vm:MainViewModel">
 
     <DockPanel >

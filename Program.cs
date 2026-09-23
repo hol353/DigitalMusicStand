@@ -1,7 +1,7 @@
 ﻿using System;
 using Avalonia;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 // Inking control for Avalonia: https://github.com/dotnet-campus/DotNetCampus.InkCanvas
 // Core PDF renderer: https://mupdf.com/

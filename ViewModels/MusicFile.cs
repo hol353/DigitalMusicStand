@@ -6,7 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using MuPDFCore;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 public class MusicFile
 {

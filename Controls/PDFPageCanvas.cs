@@ -11,7 +11,7 @@ using DotNetCampus.Inking.Contexts;
 using DotNetCampus.Inking.Primitive;
 using SkiaSharp;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 /// <summary>
 /// Encapsulates a user control that shows a page of music and allows annotations.

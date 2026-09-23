@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using DynamicData;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 public class MusicLibrary
 {

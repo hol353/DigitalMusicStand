@@ -4,7 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using DotNetCampus.Inking.Erasing;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 /// <summary>
 /// Represents the control shown at the mouse/stylus position when eraser is selected.

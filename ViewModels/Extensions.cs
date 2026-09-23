@@ -3,7 +3,7 @@ using System.IO;
 using Avalonia;
 using SkiaSharp;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 /// <summary>
 /// Extension methods.

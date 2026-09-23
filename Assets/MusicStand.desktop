@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=MusicStand
+Comment=App for your music atand
+Icon=/home/dean/Repos/MusicStand/Assets/MusicStand.svg
+Exec=/home/dean/dotnet/dotnet /home/dean/Repos/MusicStand/bin/Debug/net9.0/MusicStand.dll
+Terminal=false

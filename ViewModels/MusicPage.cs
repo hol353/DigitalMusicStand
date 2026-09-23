@@ -5,7 +5,7 @@ using Avalonia;
 using Avalonia.Media.Imaging;
 using SkiaSharp;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 public class MusicPage
 {

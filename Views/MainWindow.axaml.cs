@@ -1,6 +1,6 @@
 ﻿using Avalonia.Controls;
 
-namespace BlackFolder;
+namespace MusicStand;
 
 /// <summary>
 /// Represents the main window of the application.
