@@ -8,6 +8,7 @@
     <DockPanel >
         <ComboBox x:Name="ComboBox" Foreground="Black" Background="LightGray" HorizontalAlignment="Stretch" DockPanel.Dock="Top" ItemsSource="{Binding MusicLibrary.Directories}" SelectedItem="{Binding SelectedDirectory}" />
             <StackPanel x:Name="NavigationButtons" Background="LightGray" DockPanel.Dock="Right">
+                <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">-</Button>
                 <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">#</Button>
                 <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">A</Button>
                 <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">B</Button>
@@ -36,6 +37,12 @@
                 <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">Y</Button>
                 <Button Width="30" Foreground="Black" Click="OnNavigationButtonClicked">Z</Button>
             </StackPanel>   
-            <ListBox x:Name="ListBox" Foreground="Black" Background="LightGray" ItemsSource="{Binding MusicLibrary.RelativeFileNames}" SelectedItem="{Binding SelectedFile}" />
+            <ListBox x:Name="ListBox" Foreground="Black" Background="LightGray" ItemsSource="{Binding MusicLibrary.Files}" SelectedItem="{Binding SelectedFile}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding FileNameWithoutExtension}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </DockPanel>
 </UserControl>

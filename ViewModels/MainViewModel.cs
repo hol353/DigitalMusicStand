@@ -34,9 +34,9 @@ public class MainViewModel : ReactiveObject
     private bool _isToolbarVisible = true;
 
     /// <summary>
-    /// The currently selected file name (relative to BasePath).
+    /// The currently selected file.
     /// </summary>
-    private string _selectedFile;
+    private FileItem _selectedFile;
 
     /// <summary>
     /// The currently selected colour.
@@ -188,7 +188,7 @@ public class MainViewModel : ReactiveObject
     /// <summary>
     /// The currently selected file (relative to SelectedDirectory).
     /// </summary>
-    public string SelectedFile 
+    public FileItem SelectedFile 
     { 
         get => _selectedFile; 
         set 

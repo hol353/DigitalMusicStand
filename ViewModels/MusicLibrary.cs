@@ -1,13 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using DynamicData;
 
 namespace BlackFolder;
 
 public class MusicLibrary
 {
     private MainViewModel model;
+    private IEnumerable<FileItem> allFiles;
 
     /// <summary>
     /// The top-level path of the music library.
@@ -27,7 +31,7 @@ public class MusicLibrary
     /// <summary>
     /// The list of files in the music library (relative to SelectedDirectory, no extension).
     /// </summary>
-    public ObservableCollection<string> RelativeFileNames { get; set; } = new();
+    public ObservableCollection<FileItem> Files { get; set; } = new();
 
 
     /// <summary>
@@ -93,10 +97,26 @@ public class MusicLibrary
         var absoluteSelectedDirectory = model.Settings.SelectedDirectory?.ToAbsolute(BasePath);
         if (absoluteSelectedDirectory != null && Directory.Exists(absoluteSelectedDirectory))
         {
-            RelativeFileNames.Clear();
-            foreach (var file in Directory.GetFiles(absoluteSelectedDirectory).Order())
-                RelativeFileNames.Add(Path.GetFileNameWithoutExtension(file)
-                                          .ToRelative(absoluteSelectedDirectory));
+            allFiles = Directory.GetFiles(absoluteSelectedDirectory)
+                                .Select(file => new FileItem(file, BasePath))
+                                .OrderBy(file => file.FileNameForSorting);
+            FilterFiles(null);
         }
-    }    
+    }
+
+    /// <summary>
+    /// Filters the list of files based on the starting letter. If letter is null, all files are shown.
+    /// </summary>
+    /// <param name="letter">The letter to sort or null to show all files.</param>
+    public void FilterFiles(char? letter)
+    {
+        Files.Clear();
+        if (letter == null || letter == '-')
+            Files.AddRange(allFiles);
+        else if (letter == '#')
+            Files.AddRange(allFiles.Where(file => Int32.TryParse(file.FileNameForSorting.First().ToString(), out int i))); 
+        else
+            Files.AddRange(allFiles.Where(file => file.FileNameForSorting.StartsWith(letter.ToString(), ignoreCase: true, CultureInfo.CurrentCulture)));
+    }
+
 }

@@ -36,16 +36,7 @@ public partial class FileSelect : UserControl
     private void OnNavigationButtonClicked(object sender, RoutedEventArgs e)
     {
         var button = sender as Button;
-        string letter = button.Content.ToString();
-        string selectedFile;
-        if (letter == "#")
-            selectedFile = model.MusicLibrary.RelativeFileNames.FirstOrDefault(file => Int32.TryParse(file, out int i));
-        else
-            selectedFile = model.MusicLibrary.RelativeFileNames.FirstOrDefault(file => file.StartsWith(letter, ignoreCase: true, CultureInfo.CurrentCulture));
-        if (selectedFile != null)
-        {
-            ListBox.ScrollIntoView(model.MusicLibrary.RelativeFileNames.Last());
-            ListBox.ScrollIntoView(selectedFile);
-        }
+        char letter = button.Content.ToString().First();
+        model.MusicLibrary.FilterFiles(letter);
     }    
 }

@@ -58,18 +58,17 @@ public partial class PDFCanvas : UserControl
     /// Load a pdf or txt file.
     /// </summary>
     /// <param name="file"></param>
-    private void LoadFile(string file)
+    private void LoadFile(FileItem file)
     {
         if (file != null)
         {
             // The file can be either .pdf or .txt (setlist).
-            var absolutePdfFilePath = Path.Combine(model.Settings.MusicLibraryBaseDirectory, model.SelectedDirectory, file) + ".pdf";
-            if (File.Exists(absolutePdfFilePath))
-                Load([absolutePdfFilePath]);
+            if (File.Exists(file.AbsolutePath))
+                Load([file.AbsolutePath]);
             else
             {
                 // Handle .txt file case
-                var absoluteTxtFilePath = Path.ChangeExtension(absolutePdfFilePath, ".txt");
+                var absoluteTxtFilePath = Path.ChangeExtension(file.AbsolutePath, ".txt");
                 if (File.Exists(absoluteTxtFilePath))
                     Load(File.ReadAllLines(absoluteTxtFilePath));
             }
