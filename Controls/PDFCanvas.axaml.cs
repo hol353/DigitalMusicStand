@@ -156,7 +156,8 @@ public partial class PDFCanvas : UserControl
         zoomBorder.SizeChanged += OnZoomBorderSizeChanged;
         zoomBorder.PanStarted += OnPanStarted;
         zoomBorder.PanEnded += OnPanEnded;
-        //zoomBorder.ZoomDeltaChanged += (s, e) => OnZoomStarted(null, null);
+        zoomBorder.DoubleClickZoomMode = DoubleClickZoomMode.None;
+        zoomBorder.ZoomDeltaChanged += (s, e) => OnZoomChanged(null, null);
         this.Tapped += OnSingleTap;
     }
  
@@ -209,15 +210,16 @@ public partial class PDFCanvas : UserControl
     /// </summary>
     private void OnZoomBorderSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        ResizeChildren(e.NewSize);
+        ResizeChildren(e.NewSize, e.PreviousSize);
     }
 
     /// <summary>
     /// Resizes all child controls to fit the new size of the ZoomBorder.
     /// </summary>
-    private void ResizeChildren(Avalonia.Size newSize)
+    private void ResizeChildren(Avalonia.Size newSize, Avalonia.Size oldSize)
     {
-        //zoomBorder.Zoom(1.0, Bounds.Width / 2, Bounds.Height / 2);
+        // Determine the current page being displayed.
+        int oldPageIndex = GetIndexOfVisiblePage();
 
         // Need to resize the children to fit the new size of the ZoomBorder. This is necessary because the 
         // StackPanel does not always automatically resize its children when it is resized.
@@ -227,6 +229,23 @@ public partial class PDFCanvas : UserControl
             page.Height = newSize.Height;
         }
         PanInYDirectionOnly(newSize.Height);
+
+        // After resizing, pan back to the same page that was being displayed before resizing.
+        if (oldPageIndex >= 0 && oldPageIndex < musicCanvas.Children.Count)
+        {
+            // Need to calculate an OffsetY by calling page.CalculateRenderRectangle with the newSize.
+            // Can't just use page.Bounds or page.ContainsYPoint because the page hasn't been rendered yet
+            // and the Bounds won't be the final bounds after resizing.
+            double newOffsetY = 0;
+            for (int i = 0; i < oldPageIndex; i++)
+            {
+                Rect r = (musicCanvas.Children[i] as PDFPageCanvas).CalculateRenderRectangle(newSize.Width, newSize.Height);
+                newOffsetY += r.Height + musicCanvas.Spacing;
+            }
+
+            double deltaPan = -newOffsetY - zoomBorder.OffsetY;
+            zoomBorder.PanDelta(0, deltaPan);
+        }
     } 
 
     /// <summary>
@@ -254,12 +273,14 @@ public partial class PDFCanvas : UserControl
     }
 
     /// <summary>
-    /// Invoked when the user starts zooming. Sets the min and max offsets for the ZoomBorder based on the current zoom level.
+    /// Invoked when the user changes zooming.
     /// </summary>
-    private void OnZoomStarted(object sender, ZoomEventArgs e)
+    private void OnZoomChanged(object sender, ZoomEventArgs e)
     {
         if (Math.Round(zoomBorder.ZoomX, 2) > 1 || Math.Round(zoomBorder.ZoomY, 2) > 1)
             PanNormally();
+        else
+            PanInYDirectionOnly();
     }
 
     /// <summary>
@@ -280,18 +301,13 @@ public partial class PDFCanvas : UserControl
                 return;
             }
 
-            // Get the y pixel position of the page at the top of the viewport.
-            var yPositionTopViewPort = -zoomBorder.OffsetY;
-
-            // Find page that is at the top of the viewport
-            var topPage = musicCanvas.Children.OfType<PDFPageCanvas>().FirstOrDefault(page => page.ContainsYPoint(yPositionTopViewPort));
-            int topPageIndex = musicCanvas.Children.IndexOf(topPage);
+            int visiblePageIndex = GetIndexOfVisiblePage();
 
             int nextPageIndex;
             if (point.Y < viewPortHeight / 2)
-                nextPageIndex = topPageIndex - 1;   // go to previous page
+                nextPageIndex = visiblePageIndex - 1;   // go to previous page
             else
-                nextPageIndex = topPageIndex + 1;   // go to next page
+                nextPageIndex = visiblePageIndex + 1;   // go to next page
 
             if (nextPageIndex >= 0 && nextPageIndex < musicCanvas.Children.Count)
             {
@@ -303,6 +319,17 @@ public partial class PDFCanvas : UserControl
             }
         }
         e.Handled = true;
+    }
+
+    private int GetIndexOfVisiblePage()
+    {
+        // Get the y pixel position of the page at the centre of the viewport.
+        var yPositionCentreViewPort = -zoomBorder.OffsetY + zoomBorder.Bounds.Height / 2;
+
+        // Find page that is at the centre of the viewport
+        var centrePage = musicCanvas.Children.OfType<PDFPageCanvas>().FirstOrDefault(page => page.ContainsYPoint(yPositionCentreViewPort));
+        int centrePageIndex = musicCanvas.Children.IndexOf(centrePage);
+        return centrePageIndex;
     }
 
     /// <summary>
@@ -318,10 +345,11 @@ public partial class PDFCanvas : UserControl
     /// </summary>
     private void PanNormally()
     {
-        zoomBorder.MinOffsetX = -Bounds.Width;
-        zoomBorder.MaxOffsetX = Bounds.Width;
-        zoomBorder.MinOffsetY = -Bounds.Height;
-        zoomBorder.MaxOffsetY = Bounds.Height;
+        double maximumHeight = (musicCanvas.Children.Count * Bounds.Height) + (musicCanvas.Children.Count-1 * musicCanvas.Spacing);
+        zoomBorder.MinOffsetX = -Bounds.Width * zoomBorder.MaxZoomX;
+        zoomBorder.MaxOffsetX = Bounds.Width * zoomBorder.MaxZoomX;
+        zoomBorder.MinOffsetY = -maximumHeight * zoomBorder.MaxZoomY;
+        zoomBorder.MaxOffsetY = maximumHeight * zoomBorder.MaxZoomY;
         zoomBorder.EnablePan = true;
         zoomBorder.EnableGestureTranslation = true;
     }
@@ -350,7 +378,7 @@ public partial class PDFCanvas : UserControl
                 newHeight = Bounds.Height;
 
             double maximumHeight = (musicCanvas.Children.Count-1) * (newHeight + musicCanvas.Spacing);
-            zoomBorder.MinOffsetX = -Bounds.Width;
+            zoomBorder.MinOffsetX = 0;
             zoomBorder.MaxOffsetX = 0;
             zoomBorder.MinOffsetY = -maximumHeight;
             zoomBorder.MaxOffsetY = 0;

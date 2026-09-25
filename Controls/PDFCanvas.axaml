@@ -5,8 +5,7 @@
              x:DataType="vm:MainViewModel">
     <ZoomBorder x:Name="ZoomBorder"
                 Stretch="None"
-                PanButton="Left"
-                ZoomSpeed="1.1"
+                ZoomSpeed="0.7"
                 MinZoomX="1.0"
                 MaxZoomX="2.0"
                 MinZoomY="1.0"

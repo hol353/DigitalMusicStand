@@ -180,7 +180,7 @@ public class PDFPageCanvas : InkCanvas
         return size;
     }
 
-    private Rect CalculateRenderRectangle(double availableWidth, double availableHeight)
+    public Rect CalculateRenderRectangle(double availableWidth, double availableHeight)
     {
         var width = availableWidth;
         var height = availableHeight;
