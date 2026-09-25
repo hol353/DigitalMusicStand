@@ -25,6 +25,7 @@ public partial class PDFCanvas : UserControl
     private MainViewModel model;
     private ZoomBorder zoomBorder;
     private StackPanel musicCanvas;
+    int currentPageIndex = -1;
 
     /// <summary>The time when the user started panning. Used to determine if a tap is a pan or a single tap.</summary>
     private DateTime panStartTime = DateTime.MinValue;
@@ -72,6 +73,7 @@ public partial class PDFCanvas : UserControl
                 if (File.Exists(absoluteTxtFilePath))
                     Load(File.ReadAllLines(absoluteTxtFilePath));
             }
+            CalculatePageIndexOfCurrentPage();
         }
     }
 
@@ -218,9 +220,6 @@ public partial class PDFCanvas : UserControl
     /// </summary>
     private void ResizeChildren(Avalonia.Size newSize, Avalonia.Size oldSize)
     {
-        // Determine the current page being displayed.
-        int oldPageIndex = GetIndexOfVisiblePage();
-
         // Need to resize the children to fit the new size of the ZoomBorder. This is necessary because the 
         // StackPanel does not always automatically resize its children when it is resized.
         foreach (PDFPageCanvas page in musicCanvas.Children)
@@ -231,13 +230,13 @@ public partial class PDFCanvas : UserControl
         PanInYDirectionOnly(newSize.Height);
 
         // After resizing, pan back to the same page that was being displayed before resizing.
-        if (oldPageIndex >= 0 && oldPageIndex < musicCanvas.Children.Count)
+        if (currentPageIndex >= 0 && currentPageIndex < musicCanvas.Children.Count)
         {
             // Need to calculate an OffsetY by calling page.CalculateRenderRectangle with the newSize.
             // Can't just use page.Bounds or page.ContainsYPoint because the page hasn't been rendered yet
             // and the Bounds won't be the final bounds after resizing.
             double newOffsetY = 0;
-            for (int i = 0; i < oldPageIndex; i++)
+            for (int i = 0; i < currentPageIndex; i++)
             {
                 Rect r = (musicCanvas.Children[i] as PDFPageCanvas).CalculateRenderRectangle(newSize.Width, newSize.Height);
                 newOffsetY += r.Height + musicCanvas.Spacing;
@@ -270,6 +269,7 @@ public partial class PDFCanvas : UserControl
     {
         if (!model.IsPenMode && !model.IsEraserMode && musicCanvas.Children.Count > 0)
             panTime = DateTime.Now - panStartTime;
+        CalculatePageIndexOfCurrentPage();
     }
 
     /// <summary>
@@ -281,6 +281,7 @@ public partial class PDFCanvas : UserControl
             PanNormally();
         else
             PanInYDirectionOnly();
+        CalculatePageIndexOfCurrentPage();
     }
 
     /// <summary>
@@ -301,13 +302,11 @@ public partial class PDFCanvas : UserControl
                 return;
             }
 
-            int visiblePageIndex = GetIndexOfVisiblePage();
-
             int nextPageIndex;
             if (point.Y < viewPortHeight / 2)
-                nextPageIndex = visiblePageIndex - 1;   // go to previous page
+                nextPageIndex = currentPageIndex - 1;   // go to previous page
             else
-                nextPageIndex = visiblePageIndex + 1;   // go to next page
+                nextPageIndex = currentPageIndex + 1;   // go to next page
 
             if (nextPageIndex >= 0 && nextPageIndex < musicCanvas.Children.Count)
             {
@@ -316,20 +315,25 @@ public partial class PDFCanvas : UserControl
                 // Pan ZoomBorder to the tapped point
                 double deltaPan = scrollAmount - zoomBorder.OffsetY;
                 zoomBorder.PanDelta(0, deltaPan);
+
+                CalculatePageIndexOfCurrentPage();
             }
         }
         e.Handled = true;
     }
 
-    private int GetIndexOfVisiblePage()
+    /// <summary>
+    /// Calculate the index of the current page being displayed.
+    /// </summary>
+    private void CalculatePageIndexOfCurrentPage()
     {
-        // Get the y pixel position of the page at the centre of the viewport.
-        var yPositionCentreViewPort = -zoomBorder.OffsetY + zoomBorder.Bounds.Height / 2;
+        // Get the y pixel position of the page using a point down a bit from the top of the page.
+        // This gets around the problem where the top of the page is down a bit from the top of the screen.
+        int smallAmount = 200;
+        double yPositionCentreViewPort = -zoomBorder.OffsetY + smallAmount;
 
-        // Find page that is at the centre of the viewport
-        var centrePage = musicCanvas.Children.OfType<PDFPageCanvas>().FirstOrDefault(page => page.ContainsYPoint(yPositionCentreViewPort));
-        int centrePageIndex = musicCanvas.Children.IndexOf(centrePage);
-        return centrePageIndex;
+        var page = musicCanvas.Children.OfType<PDFPageCanvas>().FirstOrDefault(page => page.ContainsYPoint(yPositionCentreViewPort));
+        currentPageIndex = musicCanvas.Children.IndexOf(page);
     }
 
     /// <summary>
@@ -338,6 +342,7 @@ public partial class PDFCanvas : UserControl
     private void OnCentreTap()
     {
         model.IsToolbarVisible = !model.IsToolbarVisible;
+        CalculatePageIndexOfCurrentPage();
     }
 
     /// <summary>
